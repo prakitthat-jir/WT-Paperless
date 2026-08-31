@@ -1,0 +1,42 @@
+{
+  "id": "wt-paperless",
+  "name": "WT Paperless — ระบบตรวจสอบ คลังสินค้าและจัดส่ง",
+  "short_name": "WT Paperless",
+  "description": "แบบฟอร์มตรวจสอบของแผนกคลังสินค้าและจัดส่ง แบบไร้กระดาษ — INTER GROUP PACKAGING",
+  "lang": "th",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#f4f7fa",
+  "theme_color": "#1aa64b",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    { "src": "WT-Paperless-Icons/icon-192.png",          "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "WT-Paperless-Icons/icon-512.png",          "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "WT-Paperless-Icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "WT-Paperless-Icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "ตรวจรถขนส่ง ก่อน-หลัง ขึ้นสินค้า",
+      "short_name": "ตรวจรถ",
+      "url": "./?go=vehicle",
+      "icons": [{ "src": "WT-Paperless-Icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "ตรวจสุขลักษณะส่วนบุคคล",
+      "short_name": "สุขลักษณะ",
+      "url": "./?go=hygiene",
+      "icons": [{ "src": "WT-Paperless-Icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "รายชื่อพนักงาน",
+      "short_name": "พนักงาน",
+      "url": "./?go=employees",
+      "icons": [{ "src": "WT-Paperless-Icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

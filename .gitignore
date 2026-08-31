@@ -1,0 +1,29 @@
+# ───────────────────────────────────────────────────────────
+#  ข้อมูลจริง — ห้ามขึ้น GitHub เด็ดขาด
+#  ไฟล์เหล่านี้อยู่บนเครื่องแม่ในออฟฟิศเท่านั้น
+# ───────────────────────────────────────────────────────────
+WT-Paperless-Base.json
+WT-Paperless-Data.json
+WT-Paperless-Data.xlsx
+WT-Paperless-Config.json
+WT-Paperless-Backup/
+WT-Paperless-Images/
+WT-Paperless-Cert/
+*_Images/
+*.xlsx
+*.xls
+
+# รหัสผ่าน / ใบรับรอง
+*.pem
+*.key
+*.pfx
+
+# โปรแกรมอุโมงค์ (ดาวน์โหลดเอง)
+cloudflared.exe
+
+# ทั่วไป
+node_modules/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log

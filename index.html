@@ -504,6 +504,20 @@ body.pmeasure #printArea{display:block!important;position:fixed!important;left:-
 #printArea .sheet.dense .note{font-size:10.5pt}
 #printArea .note{font-size:11pt;margin-top:5px;white-space:pre-line;line-height:1.25}
 
+/* ---- บรรทัด "มาตรฐานการตรวจสอบ" ใต้ชื่อรายการ (ฟอร์มตรวจรถ) ---- */
+#printArea .std{font-size:10pt;line-height:1.06;color:#222;margin-top:0}
+#printArea .sheet.dense .std{font-size:9.5pt}
+/* ใบที่มีมาตรฐานจะสูงขึ้นเกือบเท่าตัว จึงบีบทุกส่วนที่บีบได้
+   เพื่อไม่ให้ระบบย่อทั้งใบจนตัวหนังสือเล็กเกินอ่าน */
+#printArea .sheet.hasstd td{padding:0.5px 5px;line-height:1.1}
+#printArea .sheet.hasstd th{padding:1px 5px}
+#printArea .sheet.hasstd .note{font-size:10pt;line-height:1.14;margin-top:3px}
+#printArea .sheet.hasstd .sign{margin-top:2mm;gap:4mm}
+#printArea .sheet.hasstd .srow{margin-top:1.2mm}
+#printArea .sheet.hasstd .srow.sig .ln{height:11.5mm}
+#printArea .sheet.hasstd .srow.sig .ln img{max-height:10.5mm}
+#printArea .sheet.hasstd .sbox{line-height:1.25}
+
 /* ---- ช่องลงนาม แบบเอกสารไทย ---- */
 #printArea .sign{display:grid;gap:8mm;margin-top:6mm;font-size:13pt}
 #printArea .sbox{width:100%;max-width:82mm;margin:0 auto;line-height:1.4}
@@ -578,7 +592,7 @@ const FORMS = {
     id:"vehicle", icon:"🚚", short:"ตรวจรถ ก่อน-หลัง", sheet:"การตรวจสอบรถขนส่ง ก่อน-หลัง",
     title:"การตรวจสอบรถขนส่ง ก่อน-หลัง ขึ้นสินค้า",
     code:"FM-PB-007", rev:"Rev.03", eff:"09/03/63",
-    scale:CHECK_OKNG, printMode:"doc", colLabel:"plate",
+    scale:CHECK_OKNG, printMode:"doc", colLabel:"plate", printStd:1,   /* พิมพ์ข้อความมาตรฐานใต้แต่ละรายการ (ตามฟอร์มเดิมใน AppSheet) */
     multi:{src:"plates", field:"plate", label:"เลือกทะเบียนรถที่ตรวจวันนี้", mode:"list", unit:"คัน", addLabel:"เพิ่มทะเบียนรถ", derive:["delivery"], deriveLabel:"ประเภทการจัดส่ง"},
     quickAll:{label:"ตรวจผ่านทั้งหมดวันนี้", unit:"คัน"},
     header:[
@@ -3534,6 +3548,7 @@ function docSheet(f, r){
       const bad = !f.weighted && !f.scoring && f.scale.some(s=> String(s.v)===String(v) && s.good===0);
       rows += `<tr><td style="width:38px" class="c">${esc(i.k)}</td>`
             + `<td>${esc(i.t)}${i.max?` <i>(เต็ม ${i.max})</i>`:""}`
+            + (f.printStd && i.s ? `<div class="std">มาตรฐานการตรวจสอบ: ${esc(i.s)}</div>` : "")
             + `</td>`
             + `<td class="c" style="width:66px;font-weight:700${bad?";background:#eee":""}">${esc(v)}</td></tr>`;
     });
@@ -3561,7 +3576,7 @@ function docSheet(f, r){
       return v ? `<tr><th style="width:22%">${esc(fd.label)}</th><td>${esc(v)}</td></tr>` : "";
     }).join("");
   const footTable = foot ? `<table style="margin-top:6px">${foot}</table>` : "";
-  return `<div class="sheet"><div class="pg">${sheetHead(f)}${headTable(f,r)}
+  return `<div class="sheet${f.printStd?" hasstd":""}"><div class="pg">${sheetHead(f)}${headTable(f,r)}
     <table><thead><tr><th style="width:38px">ข้อ</th><th>รายการตรวจสอบ</th><th style="width:66px">ผล</th></tr></thead><tbody>${rows}</tbody></table>
     ${summary}${footTable}
     ${f.note? `<div class="note">${esc(f.note)}</div>`:""}

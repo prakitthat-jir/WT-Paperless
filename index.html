@@ -1218,7 +1218,14 @@ function go(view, opts={}){
   render(); window.scrollTo(0,0);
 }
 
+/* ก่อนวาดหน้าจอใหม่ ให้แป้นลายเซ็นที่ยังเปิดอยู่บันทึกสิ่งที่เขียนไว้ก่อน */
+function flushSignPads(){
+  document.querySelectorAll(".sig canvas").forEach(cv=>{ try{ cv._padFlush && cv._padFlush(); }catch(e){} });
+}
+window.addEventListener("beforeunload", flushSignPads);
+
 function render(){
+  flushSignPads();
   const app = $("#app"); app.innerHTML = "";
   const lg = $("#hdrLogo");
   if(lg && !lg.src && typeof LOGO !== "undefined") lg.src = LOGO;
@@ -1832,23 +1839,98 @@ function signNode(fd, rec, onChange, fdForm){
 
   function attachPad(){
     const cv = box.querySelector("canvas"); if(!cv) return;
-    const ratio = window.devicePixelRatio||1;
-    requestAnimationFrame(()=>{
-      cv.width = cv.offsetWidth*ratio; cv.height = cv.offsetHeight*ratio;
-      const ctx = cv.getContext("2d"); ctx.scale(ratio,ratio);
-      ctx.lineWidth=2.2; ctx.lineCap="round"; ctx.strokeStyle="#111";
-      let drawing=false, dirty=false;
-      const pos = e=>{ const r=cv.getBoundingClientRect(); const p=e.touches?e.touches[0]:e; return [p.clientX-r.left, p.clientY-r.top]; };
-      const start = e=>{ drawing=true; ctx.beginPath(); ctx.moveTo(...pos(e)); e.preventDefault(); };
-      const move = e=>{ if(!drawing) return; ctx.lineTo(...pos(e)); ctx.stroke(); dirty=true; e.preventDefault(); };
-      const end = ()=>{ if(!drawing) return; drawing=false;
-        if(dirty) trimImage(cv.toDataURL("image/png"), url=>{ rec[fd.k] = url; refreshPin(); }); };
-      cv.addEventListener("mousedown",start); cv.addEventListener("mousemove",move);
-      window.addEventListener("mouseup",end);
-      cv.addEventListener("touchstart",start,{passive:false});
-      cv.addEventListener("touchmove",move,{passive:false});
-      cv.addEventListener("touchend",end);
-    });
+    if(cv._padOn) return;                       /* กันผูกซ้ำถ้าถูกเรียกหลายรอบ */
+    cv._padOn = true;
+
+    let ctx = null, drawing = false, inked = false;
+
+    /* ---- ตั้งขนาดบิตแมปให้ตรงกับขนาดที่แสดงจริง ----
+       ทำทันที ไม่รอ requestAnimationFrame เพราะถ้าแท็บถูกซ่อนอยู่
+       เฟรมจะไม่มา แล้วแป้นจะใช้ไม่ได้เลยทั้งที่ผู้ใช้เห็นกรอบอยู่ */
+    function fitCanvas(){
+      const ratio = window.devicePixelRatio || 1;
+      const w = cv.offsetWidth  || cv.parentElement.offsetWidth || 300;
+      const h = cv.offsetHeight || 124;
+      const nw = Math.max(1, Math.round(w*ratio)), nh = Math.max(1, Math.round(h*ratio));
+      if(cv.width === nw && cv.height === nh && ctx) return;
+      /* เก็บสิ่งที่วาดไว้ก่อนเปลี่ยนขนาด (การตั้ง width/height จะล้าง canvas) */
+      let keep = null;
+      if(inked && cv.width && cv.height){ try{ keep = cv.toDataURL("image/png"); }catch(e){} }
+      cv.width = nw; cv.height = nh;
+      ctx = cv.getContext("2d");
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.lineWidth = 2.2; ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.strokeStyle = "#111";
+      if(keep){ const im = new Image(); im.onload = ()=> ctx.drawImage(im, 0, 0, w, h); im.src = keep; }
+    }
+    fitCanvas();
+    if(!cv.width || !cv.offsetWidth) requestAnimationFrame(fitCanvas);   /* เผื่อ layout ยังไม่เสร็จ */
+    const ro = window.ResizeObserver ? new ResizeObserver(()=> fitCanvas()) : null;
+    if(ro) ro.observe(cv);
+
+    const at = e =>{
+      const r = cv.getBoundingClientRect();
+      return [e.clientX - r.left, e.clientY - r.top];
+    };
+
+    /* ---- บันทึกเข้า rec ทันที แล้วค่อยตัดขอบขาวตามทีหลัง ----
+       เดิมรอ trimImage ซึ่งทำงานแบบ async ถ้าผู้ใช้กด "บันทึก" เร็ว
+       ลายเซ็นจะยังไม่เข้า rec ทำให้ใบที่บันทึกไม่มีลายเซ็น */
+    function commit(){
+      if(!inked) return;
+      let raw = "";
+      try{ raw = cv.toDataURL("image/png"); }catch(e){ return; }
+      rec[fd.k] = raw;                                   /* มีค่าทันที ไม่มีช่วงว่าง */
+      refreshPin();
+      /* ตัดขอบขาวต่อทันที (ใช้เวลาไม่กี่มิลลิวินาที) — ห้ามหน่วง
+         ไม่งั้นถ้าผู้ใช้กดบันทึกเร็ว จะได้รูปที่ยังไม่ตัดขอบไปแทน */
+      trimImage(raw, url=>{ if(rec[fd.k] === raw) rec[fd.k] = url; refreshPin(); });
+    }
+
+    const down = e=>{
+      if(e.button !== undefined && e.button !== 0) return;   /* เฉพาะปุ่มซ้าย */
+      fitCanvas();
+      drawing = true; inked = true;                          /* แตะจุดเดียวก็ถือว่าเซ็นแล้ว */
+      const [x,y] = at(e);
+      ctx.beginPath(); ctx.moveTo(x, y);
+      ctx.lineTo(x+0.01, y);  ctx.stroke();                  /* ให้จุดเดียวมีหมึกจริง */
+      try{ cv.setPointerCapture(e.pointerId); }catch(err){}  /* ลากออกนอกกรอบได้ */
+      e.preventDefault();
+    };
+    const move = e=>{
+      if(!drawing) return;
+      const [x,y] = at(e);
+      ctx.lineTo(x, y); ctx.stroke();
+      e.preventDefault();
+    };
+    const up = e=>{
+      if(!drawing) return;
+      drawing = false;
+      try{ cv.releasePointerCapture(e.pointerId); }catch(err){}
+      commit();
+      e.preventDefault();
+    };
+
+    /* Pointer Events ครอบคลุมทั้งเมาส์ นิ้ว และปากกา ในทางเดียว
+       ถ้าเบราว์เซอร์เก่าไม่รองรับ ค่อยถอยไปใช้ mouse/touch แบบเดิม */
+    if(window.PointerEvent){
+      cv.addEventListener("pointerdown", down);
+      cv.addEventListener("pointermove", move);
+      cv.addEventListener("pointerup", up);
+      cv.addEventListener("pointercancel", up);
+      cv.addEventListener("pointerleave", e=>{ if(drawing) commit(); });
+    } else {
+      const t = fn => e=>{ const p = e.touches && e.touches[0] ? e.touches[0] : e; fn(Object.assign({}, p, {preventDefault:()=>e.preventDefault(), button:0})); };
+      cv.addEventListener("mousedown", down);
+      cv.addEventListener("mousemove", move);
+      cv.addEventListener("mouseup", up);
+      cv.addEventListener("mouseleave", e=>{ if(drawing){ drawing=false; commit(); } });
+      cv.addEventListener("touchstart", t(down), {passive:false});
+      cv.addEventListener("touchmove",  t(move), {passive:false});
+      cv.addEventListener("touchend",   e=>{ if(drawing){ drawing=false; commit(); } e.preventDefault(); }, {passive:false});
+    }
+
+    /* กันตกหล่น: ถ้ามีการเขียนค้างอยู่ตอนหน้าจอถูกวาดใหม่หรือปิดหน้า ให้บันทึกก่อน */
+    cv._padFlush = ()=>{ if(inked) commit(); if(ro) ro.disconnect(); };
   }
   return wrap;
 }

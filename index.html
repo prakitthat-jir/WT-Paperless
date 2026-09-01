@@ -24,7 +24,7 @@
 :root{
   --p:#1aa64b; --pd:#137a39; --pl:#22c55e; --s:#ff6a13;
   --fa:#1aa64b; --fa2:#22c55e; --fb:#137a39; --on-fill:#fff;
-  --ok:#10b981; --er:#ef4444; --wa:#f59e0b;
+  --ok:#10b981; --er:#ef4444; --wa:#f59e0b; --ng:#ef4444;
   --bg:#eef2f6; --bg-grad-a:#f4f7fa; --bg2:#f1f5f9; --bg3:#f6f9fc;
   --card:#fff; --inp:#fff; --ovl:rgba(255,255,255,.86);
   --tx:#0f172a; --tx2:#334155; --mu:#64748b; --mu2:#94a3b8;
@@ -208,6 +208,36 @@ label.f > span{display:block;font-size:.76rem;font-weight:700;color:var(--mu);ma
 .sigscale .val{font-size:.8rem;font-weight:700;color:var(--pd);white-space:nowrap;min-width:118px}
 .hint{font-size:.82rem;color:var(--mu);margin-top:8px;line-height:1.55}
 .count-note{font-size:.82rem;color:var(--mu);margin:2px 0 11px}
+
+/* ───────── ตารางตรวจรายเดือน (โฟล์คลิฟท์ FM-TB-011) ───────── */
+.daystrip{display:flex;flex-wrap:wrap;gap:6px;margin:11px 0 3px}
+.dchip{min-width:52px;padding:7px 6px 6px;border:1.5px solid var(--bd);background:var(--card);border-radius:10px;
+  cursor:pointer;text-align:center;font-weight:800;font-size:.92rem;line-height:1.12;color:var(--tx2);transition:.14s}
+.dchip small{display:block;font-size:.63rem;font-weight:600;color:var(--mu);margin-top:2px;letter-spacing:0}
+.dchip:hover{border-color:var(--p);color:var(--pd);transform:translateY(-1px)}
+.dchip.full{background:linear-gradient(135deg,#34d399,#059669);border-color:transparent;color:#fff}
+.dchip.part{background:var(--t-o);border-color:#f2c46a;color:var(--t-oT)}
+.dchip.part small{color:var(--t-oT)}
+.dchip.bad{background:linear-gradient(135deg,#f87171,var(--er));border-color:transparent;color:#fff}
+.dchip.full small,.dchip.bad small{color:rgba(255,255,255,.88)}
+.dchip.today{box-shadow:0 0 0 2px rgba(255,106,19,.6)}
+.mwrap{max-height:66vh}
+.mgrid{width:auto;min-width:100%;border-collapse:separate;border-spacing:0;font-size:.82rem}
+.mgrid th,.mgrid td{border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);padding:3px 4px;
+  text-align:center;white-space:nowrap;background:var(--card);position:static}
+.mgrid .itm{text-align:left;white-space:normal;min-width:210px;max-width:260px;position:sticky;left:0;z-index:2;
+  background:var(--card);font-size:.84rem;line-height:1.35;border-right:1.5px solid var(--bd2)}
+.mgrid thead th{position:sticky;top:0;z-index:3;background:var(--bg3);color:var(--tx2);font-weight:800}
+.mgrid thead th.itm{z-index:4;background:var(--bg3)}
+.mgrid tr.sec td{background:var(--ac);color:var(--pd);font-weight:800;text-align:left;font-size:.88rem}
+.mgrid tr.gt td{background:var(--bg2);font-weight:700;text-align:left}
+.mgrid .dh{cursor:pointer;user-select:none;min-width:29px;font-size:.8rem}
+.mgrid .dh:hover{background:var(--ac);color:var(--pd)}
+.mgrid .cell{cursor:pointer;min-width:29px;font-weight:800;color:var(--mu2);user-select:none}
+.mgrid .cell:hover{outline:2px solid var(--p);outline-offset:-2px}
+.mgrid .cell.ok{background:#e9f9f0;color:#047857}
+.mgrid .cell.ng{background:#fee2e2;color:#b91c1c}
+@media(max-width:700px){ .mgrid .itm{min-width:150px;font-size:.78rem} .mwrap{max-height:60vh} }
 
 /* ───────── Batch rows ───────── */
 .mrow{border:1px solid var(--bd);border-radius:12px;margin-bottom:10px;overflow:hidden;background:var(--card);
@@ -440,15 +470,15 @@ a.tel{color:var(--pd);font-weight:700;text-decoration:none;border-bottom:1px dot
 }
 /* โหมดวัดความสูงก่อนพิมพ์ — วางไว้นอกจอ ผู้ใช้ไม่เห็น */
 body.pmeasure #printArea{display:block!important;position:fixed!important;left:-10000px;top:0;
-  width:194mm;visibility:hidden;z-index:-1;pointer-events:none}
+  width:var(--pgw,194mm);visibility:hidden;z-index:-1;pointer-events:none}
 
 /* 1 ใบ = 1 หน้ากระดาษ A4 เสมอ — .sheet คือกรอบหน้ากระดาษ, .pg คือเนื้อหาที่ย่อได้ */
 #printArea .sheet{
-  width:100%;height:280mm;overflow:hidden;color:#000;background:#fff;
+  width:100%;height:var(--pgh,280mm);overflow:hidden;color:#000;background:#fff;
   font-family:"TH Sarabun New","Leelawadee UI",Tahoma,sans-serif;
 }
 #printArea .pg{
-  padding:2mm 3mm;box-sizing:border-box;height:280mm;
+  padding:2mm 3mm;box-sizing:border-box;height:var(--pgh,280mm);
   font-size:14pt;line-height:1.25;
   display:flex;flex-direction:column;transform-origin:0 0;
 }
@@ -491,6 +521,20 @@ body.pmeasure #printArea{display:block!important;position:fixed!important;left:-
 #printArea .foot{display:flex;justify-content:space-between;font-size:10.5pt;
   margin-top:auto;padding-top:3px;border-top:1px solid #999}
 #printArea .c{text-align:center}
+
+/* ---- ใบตรวจรายเดือน (กระดาษแนวนอน) ---- */
+#printArea .sheet.month .pg{font-size:12pt}
+#printArea .sheet.month table{font-size:11.5pt}
+#printArea .sheet.month th,#printArea .sheet.month td{padding:1px 2px;line-height:1.2}
+#printArea .sheet.month td.nm{text-align:left;padding-left:4px}
+#printArea .sheet.month .dcol{font-size:10pt;padding:1px 0}
+#printArea .sheet.month tbody td{height:5.6mm}
+#printArea .sheet.month tr.sec td,#printArea .sheet.month tr.ins td{height:auto}
+#printArea .sheet.month tr.sec td{background:#e4e4e4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;
+  text-align:left;font-weight:700}
+#printArea .sheet.month tr.ins td{font-size:8.5pt}
+#printArea .sheet.month .sign{margin-top:4mm;font-size:12pt}
+#printArea .sheet.month .note{font-size:11pt}
 </style>
 </head>
 <body>
@@ -527,6 +571,7 @@ const CHECK_OKNG = [{v:"OK",good:1},{v:"NG",good:0}];
 const CHECK_SLASH = [{v:"/",good:1},{v:"x",good:0}];
 const CHECK_GLASS = [{v:"/",good:1},{v:"GI",good:0}];
 const SCORE_123 = [{v:3,good:1},{v:2,good:2},{v:1,good:0}];
+const CHECK_FORK = [{v:"/",good:1},{v:"X",good:0}];
 
 const FORMS = {
   vehicle: {
@@ -740,8 +785,47 @@ const FORMS = {
     note:"เกณฑ์การประเมิน: คะแนนเต็ม 100 คะแนน\nเกรด A = 98–100 (ดีมาก) · เกรด B = 90–97 (ดี) · เกรด C = 85–89 (พอใช้) · เกรด D = 80–84 (ปรับปรุง) · เกรด F = ต่ำกว่า 80 (ไม่ผ่าน)",
     listCols:[{k:"date",t:"วันที่"},{k:"contractorCode",t:"รหัส"},{k:"contractor",t:"ผู้รับเหมา"},{k:"round",t:"ครั้งที่"},{k:"_score",t:"คะแนน"},{k:"_grade",t:"เกรด"}]
   }
+,
+
+  forklift: {
+    id:"forklift", icon:"🏗", short:"ตรวจโฟล์คลิฟท์", sheet:"ตรวจสอบรถโฟล์คลิฟท์",
+    title:"ตารางตรวจสอบรถโฟล์คลิฟท์ไฟฟ้าและรถแฮนด์ลิฟท์ ประจำเดือน",
+    code:"FM-TB-011", rev:"Rev.00", eff:"20/8/57",
+    scale:CHECK_FORK, monthly:1, printMode:"month", landscape:1,
+    header:[
+      {k:"month", label:"เดือนที่ตรวจสอบ", type:"month", req:1, def:"thisMonth"}
+    ],
+    footer:[
+      {k:"inspector", label:"ผู้ตรวจสอบ", type:"sign", pos:"พนักงานคลังสินค้าและจัดส่ง"},
+      {k:"verifier", label:"ผู้ทวนสอบ", type:"sign", pos:"หัวหน้าแผนกคลังสินค้าและจัดส่ง"},
+      {k:"verifyDate", label:"วันที่ทวนสอบ", type:"date", def:"today"}
+    ],
+    groups:[
+      {sec:"รถโฟล์คลิฟไฟฟ้า", n:"1", t:"ล้อรถ", items:[
+        {k:"1.1", t:"ลูกปืนล้อต้องไม่แตก"},
+        {k:"1.2", t:"ยางล้อหน้า-ล้อหลังต้องไม่สึก"}
+      ]},
+      {sec:"รถโฟล์คลิฟไฟฟ้า", n:"2", t:"กระบอกไฮโดริค", items:[
+        {k:"2.1", t:"น้ำมันต้องไม่รั่วไหล"},
+        {k:"2.2", t:"กระบอกต้องยกขึ้น"},
+        {k:"2.3", t:"น้ำกลั่นอยู่ในเกณฑ์ปกติ"},
+        {k:"2.4", t:"น้ำกลั่นต้องไม่รั่วซึม"}
+      ]},
+      {sec:"รถโฟล์คลิฟไฟฟ้า", n:"3", t:"ความสะอาดตัวรถ", items:[
+        {k:"3.1", t:"เศษเชือกต้องไม่ติดที่ล้อรถ"},
+        {k:"3.2", t:"รถต้องไม่เปื้อนน้ำมัน"}
+      ]},
+      {sec:"รถแฮนด์ลิฟท์", items:[
+        {k:"4.1", t:"น้ำมันต้องไม่รั่วซึม"},
+        {k:"4.2", t:"กระบอกต้องยกขึ้น - ลงปกติ"},
+        {k:"4.3", t:"เศษเชือกต้องไม่ติดที่ล้อรถ"}
+      ]}
+    ],
+    note:"หมายเหตุ:   /  ปกติ      X  ผิดปกติ",
+    listCols:[{k:"_month",t:"เดือน"},{k:"_days",t:"ตรวจแล้ว"},{k:"inspectorName",t:"ผู้ตรวจสอบ"},{k:"verifierName",t:"ผู้ทวนสอบ"}]
+  }
 };
-const FORM_ORDER = ["vehicle","hygiene","glass","truckcheck","evaluate"];
+const FORM_ORDER = ["vehicle","hygiene","glass","truckcheck","evaluate","forklift"];
 
 /* ============================================================
    STORAGE
@@ -799,6 +883,14 @@ function probeBase(base){
     .catch(()=> null);
 }
 function apiBase(){ return CONN.api || ""; }
+/* รูปลายเซ็นเก็บเป็น path ญาติของเครื่องแม่ — เวลาเปิดจาก GitHub Pages ต้องชี้กลับไปที่เครื่องแม่
+   และแนบโทเคนไปด้วย เพราะ <img> ส่ง header Authorization ไม่ได้ */
+function sigSrc(v){
+  if(!v) return "";
+  if(/^(data:|https?:)/i.test(v)) return v;
+  const base = CONN.api ? CONN.api.replace(/\/$/, "") + "/" : "";
+  return base + v + (CONN.token ? (v.includes("?") ? "&" : "?") + "t=" + encodeURIComponent(CONN.token) : "");
+}
 function apiOrigin(){ return CONN.api ? CONN.api.replace(/\/$/, "") : location.origin; }
 
 function api(p, body){
@@ -1036,12 +1128,62 @@ function thLong(iso){
   const p = String(iso).split("-"); if(p.length!==3) return iso;
   return `${+p[2]} ${THMON[+p[1]]} ${+p[0]+543}`;
 }
+/* ---------- ตัวช่วยของฟอร์มรายเดือน (หนึ่งใบ = หนึ่งเดือน) ---------- */
+const thisMonth = () => todayISO().slice(0,7);
+function ymOf(r){ return String(r.month || (r.date||"").slice(0,7) || ""); }
+function daysInMonth(ym){
+  const p = String(ym||"").split("-");
+  if(p.length < 2 || !+p[0] || !+p[1]) return 31;
+  return new Date(+p[0], +p[1], 0).getDate();
+}
+function thMonth(ym){
+  const p = String(ym||"").split("-");
+  return (p.length>=2 && +p[1]) ? THMON[+p[1]] + " " + (+p[0]+543) : "";
+}
+function dayVal(r, k, d){
+  const o = r.items && r.items[k];
+  return (o && typeof o === "object") ? (o[d] || "") : "";
+}
+function setDayVal(r, k, d, v){
+  r.items = r.items || {};
+  let o = r.items[k];
+  if(!o || typeof o !== "object") o = r.items[k] = {};
+  if(v === "" || v == null) delete o[d]; else o[d] = v;
+}
+/* ชื่อสั้นสำหรับช่อง "ผู้ตรวจสอบ" รายวันในใบพิมพ์ (ใช้ชื่อเล่นถ้ามี) */
+function shortName(nm){
+  const s0 = String(nm||"").trim();
+  if(!s0) return "";
+  const e = (typeof empOf === "function") ? empOf(s0) : null;
+  if(e && e.nick) return e.nick;
+  const s = s0.replace(/^(นางสาว|นาย|นาง)\s*/, "").trim();
+  return (s.split(/\s+/)[0] || "").slice(0, 7);
+}
+function monthScore(f, r){
+  const items = allItems(f), n = daysInMonth(ymOf(r));
+  let ng = 0, days = 0, cells = 0;
+  const ngDays = [], fullDays = [];
+  for(let d=1; d<=n; d++){
+    let c = 0, bad = 0;
+    items.forEach(i=>{
+      const v = dayVal(r, i.k, d);
+      if(v === "") return;
+      c++; cells++;
+      if(f.scale.some(s=> String(s.v)===String(v) && s.good===0)) bad++;
+    });
+    if(c){ days++; if(bad){ ng += bad; ngDays.push(d); } }
+    if(c === items.length && !bad) fullDays.push(d);
+  }
+  return {ng, ngItems:ngDays.map(d=>"วันที่ "+d), ngDays, total:n, days, cells,
+          full:fullDays.length, items:items.length};
+}
 function toast(msg){
   const t=$("#toast"); t.textContent=msg; t.classList.add("show");
   clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),1900);
 }
 function allItems(f){ return f.groups.flatMap(g=>g.items); }
 function scoreOf(f, r){
+  if(f.monthly) return monthScore(f, r);
   const items = allItems(f);
   if(f.weighted){
     const sum = items.reduce((a,i)=>a+(Number(r.items&&r.items[i.k])||0),0);
@@ -1091,7 +1233,7 @@ function render(){
   if(state.view==="masteredit") $("#backBtn").classList.remove("hide");
   if(state.view==="home") viewHome(app);
   else if(state.view==="list") viewList(app);
-  else if(state.view==="form") viewForm(app);
+  else if(state.view==="form") ((FORMS[state.fid]||{}).monthly ? viewMonthForm : viewForm)(app);
   else if(state.view==="multi") viewMulti(app);
   else if(state.view==="old"){
     const r = allRecs(state.fid).find(x=>x.id===state.id);
@@ -1270,7 +1412,7 @@ function viewList(app){
   if(quickBtn) tb.appendChild(quickBtn);
   app.appendChild(tb);
 
-  app.appendChild(el("div","count-note","แตะที่แถวไหนก็ได้เพื่อเปิดดู/แก้ไขรายการนั้น · ปุ่ม “พิมพ์” " + (f.printMode==="doc" ? "จะพิมพ์เป็นใบแยกทีละรายการ" : "จะพิมพ์รวมทั้งวันให้ในใบเดียว")));
+  app.appendChild(el("div","count-note","แตะที่แถวไหนก็ได้เพื่อเปิดดู/แก้ไขรายการนั้น · ปุ่ม “พิมพ์” " + (f.monthly ? "จะพิมพ์เป็นตารางทั้งเดือน 1 แผ่น (กระดาษแนวนอน)" : f.printMode==="doc" ? "จะพิมพ์เป็นใบแยกทีละรายการ" : "จะพิมพ์รวมทั้งวันให้ในใบเดียว")));
   const wrap = el("div","tablewrap cardify");
   app.appendChild(wrap);
   renderRows();
@@ -1310,6 +1452,8 @@ function viewList(app){
         + cols.map((c,ci)=>{
             let v = c.k==="_pct" ? sc.pct+"%" : c.k==="_result" ? sc.result
                   : c.k==="_score" ? sc.sum+"/"+sc.max : c.k==="_grade" ? sc.grade
+                  : c.k==="_month" ? thMonth(ymOf(r))
+                  : c.k==="_days" ? (sc.days||0)+" / "+(sc.total||0)+" วัน"
                   : c.k==="date" ? thDate(r.date) : r[c.k];
             if(typeof v==="string" && v.length>40) v = v.slice(0,40)+"…";
             return `<td class="${ci===0?"pri":""}" data-label="${esc(c.t)}">${esc(v)}</td>`;
@@ -1376,6 +1520,7 @@ function duplicateRecord(f, r){
   c.id = uid(); delete c._h;
   c.createdAt = Date.now(); delete c.updatedAt;
   c.date = todayISO();
+  if(f.monthly){ c.month = thisMonth(); c.date = c.month + "-01"; }
   f.footer.filter(x=> x.type==="sign").forEach(fd=>{ c[fd.k] = ""; c[fd.k+"Name"] = ""; delete c[fd.k+"Scale"]; });
   ["verifyDate","approveDate"].forEach(k=>{ if(c[k]!==undefined) c[k] = ""; });
   if(f.header.some(h=>h.k==="time") || f.footer.some(h=>h.k==="time")) c.time = nowHM();
@@ -1426,7 +1571,7 @@ function viewOld(f, r){
     if(fd.type==="sign"){
       const nm = r[fd.k+"Name"] || "";
       const ps = r[fd.k+"Pos"] || fd.pos || "";
-      v = (r[fd.k] ? `<img src="${esc(r[fd.k])}" alt="ลายเซ็น" style="max-height:${70*(Number(r[fd.k+"Scale"])||1)}px;background:#fff;border:1px solid var(--bd);border-radius:8px"><br>` : "")
+      v = (r[fd.k] ? `<img src="${esc(sigSrc(r[fd.k]))}" alt="ลายเซ็น" style="max-height:${70*(Number(r[fd.k+"Scale"])||1)}px;background:#fff;border:1px solid var(--bd);border-radius:8px"><br>` : "")
         + "<b>" + esc(nm || (r[fd.k] ? "" : "-")) + "</b>"
         + (ps ? `<div style="font-size:14px;color:var(--muted)">${esc(ps)}</div>` : "");
     }
@@ -1580,7 +1725,7 @@ function signNode(fd, rec, onChange, fdForm){
   const wrap = el("label","f", `<span>${esc(fd.label)}</span>`);
   const box = el("div","sig");
   const has = !!rec[fd.k];
-  box.innerHTML = has ? `<img src="${rec[fd.k]}" alt="ลายเซ็น" style="max-height:${60*(Number(rec[fd.k+"Scale"])||1)}px">`
+  box.innerHTML = has ? `<img src="${sigSrc(rec[fd.k])}" alt="ลายเซ็น" style="max-height:${60*(Number(rec[fd.k+"Scale"])||1)}px">`
                       : `<canvas></canvas>`;
   const btns = el("div","toolbar"); btns.style.marginTop="8px"; btns.style.marginBottom="0";
   const clr = el("button","btn sm", has? "เซ็นใหม่" : "ล้างลายเซ็น");
@@ -1849,7 +1994,8 @@ function viewForm(app){
 function newRecord(f){
   const r = {id:uid(), formId:f.id, items:{}, createdAt:Date.now()};
   f.header.concat(f.footer).forEach(fd=>{
-    if(fd.def==="today") r[fd.k] = todayISO();
+    if(fd.def==="thisMonth"){ r[fd.k] = thisMonth(); r.date = r[fd.k] + "-01"; }
+    else if(fd.def==="today") r[fd.k] = todayISO();
     else if(fd.def==="now") r[fd.k] = nowHM();
     else if(fd.remember && DB.prefs[f.id+"."+fd.k]) r[fd.k] = DB.prefs[f.id+"."+fd.k];
     else r[fd.k] = "";
@@ -3128,6 +3274,7 @@ function download(name, text, type){
 }
 function exportCSV(f, list){
   if(!list.length){ alert("ไม่มีข้อมูลให้ส่งออก"); return; }
+  if(f.monthly) return exportMonthCSV(f, list);
   const items = allItems(f);
   const cols = ["ID","ปี","เดือน","วันที่"]
     .concat(f.header.filter(h=>h.k!=="date").map(h=>h.label))
@@ -3159,7 +3306,7 @@ function exportCSV(f, list){
    PRINT / PDF
    ============================================================ */
 function signCell(r, k){
-  if(r[k]) return `<img src="${r[k]}" alt="">`;
+  if(r[k]) return `<img src="${sigSrc(r[k])}" alt="">`;
   if(r[k+"Name"]) return `<div style="height:44px;line-height:44px">${esc(r[k+"Name"])}</div>`;
   return "";
 }
@@ -3191,10 +3338,10 @@ function signRow(f, r){
   return `<div class="sign" style="grid-template-columns:repeat(${sg.length},1fr)">` + sg.map(fd=>{
     const sc   = Number(r[fd.k+"Scale"]) || 1;
     const imgH = (15 * sc).toFixed(1), rowH = (15 * sc + 1.5).toFixed(1), imgW = Math.min(115, 98 * sc).toFixed(0);
-    const img  = r[fd.k] ? `<img src="${r[fd.k]}" alt="" style="max-height:${imgH}mm;max-width:${imgW}%">` : "";
+    const img  = r[fd.k] ? `<img src="${sigSrc(r[fd.k])}" alt="" style="max-height:${imgH}mm;max-width:${imgW}%">` : "";
     const name = r[fd.k+"Name"] || "";
     const dk   = fd.k==="verifier" ? "verifyDate" : fd.k==="approver" ? "approveDate" : "date";
-    const d    = thDate(r[dk] || r.date);
+    const d    = (f.monthly && dk === "date") ? thMonth(ymOf(r)) : thDate(r[dk] || r.date);
     const pos = r[fd.k+"Pos"] || fd.pos || "";
     const ghost = `<span class="rl ghost">${esc(fd.label)}</span>`;
     return `<div class="sbox">
@@ -3208,7 +3355,7 @@ function signRow(f, r){
 
 /* พิมพ์ทั้งวัน: ฟอร์มกระดาษ 1 ใบ = 1 วัน (รวมทุกคน/ทุกคันที่ตรวจวันนั้น) */
 function printGroup(f, r){
-  if(f.printMode === "doc" || !r.date) return [r];
+  if(f.monthly || f.printMode === "doc" || !r.date) return [r];
   const same = allRecs(f.id).filter(x=> x.date === r.date);
   return same.length ? same : [r];
 }
@@ -3220,13 +3367,15 @@ function doPrint(f, list){
       String(a.time||"").localeCompare(String(b.time||"")) ||
       (a.createdAt||0) - (b.createdAt||0));
   }
-  const CAP = f.printMode==="doc" ? 60 : 600;
+  const CAP = (f.printMode==="doc" || f.monthly) ? 60 : 600;
   if(list.length > CAP){
     if(!confirm(`เลือกไว้ ${list.length.toLocaleString("th-TH")} รายการ — จะพิมพ์เฉพาะ ${CAP} รายการล่าสุดเพื่อไม่ให้เอกสารยาวเกินไป\n(ถ้าต้องการทั้งหมด ให้กรองเป็นรายเดือนแล้วพิมพ์ทีละเดือน)`)) return;
     list = list.slice(0, CAP);
   }
   const area = $("#printArea");
+  setPaper(!!f.landscape);
   const build = per => f.printMode==="doc" ? list.map(r=>docSheet(f,r)).join("")
+                     : f.printMode==="month" ? list.map(r=>monthSheet(f,r)).join("")
                      : f.printMode==="rows" ? rowsSheet(f,list,per)
                      : matrixSheet(f,list,per);
   /* สร้างใบ -> วัดความสูงจริง -> ย่อให้พอดี 1 หน้า
@@ -3250,6 +3399,20 @@ function doPrint(f, list){
 const PAGE_MM   = 280;   /* A4 297mm - ขอบบนล่าง 8mm x2 - เผื่อปัดเศษ 1mm */
 const FIT_MIN   = 0.72;  /* ย่อได้ถึงเท่านี้ ถ้ายังไม่พอให้ลดจำนวนแถวต่อใบแทน */
 const FIT_FLOOR = 0.5;   /* กันไม่ให้เล็กจนอ่านไม่ออก */
+const LAND_MM   = 190;   /* A4 แนวนอน 210mm - ขอบบนล่าง 8mm x2 - เผื่อปัดเศษ */
+let PAGE_H = PAGE_MM;
+/* สลับกระดาษแนวตั้ง/แนวนอนตามฟอร์ม — ตารางตรวจรายเดือนต้องพิมพ์แนวนอน */
+function setPaper(land){
+  PAGE_H = land ? LAND_MM : PAGE_MM;
+  const area = $("#printArea");
+  if(area){
+    area.style.setProperty("--pgh", PAGE_H + "mm");
+    area.style.setProperty("--pgw", (land ? 281 : 194) + "mm");
+  }
+  let st = document.getElementById("paperStyle");
+  if(!st){ st = document.createElement("style"); st.id = "paperStyle"; document.head.appendChild(st); }
+  st.textContent = "@media print{@page{size:A4 " + (land ? "landscape" : "portrait") + ";margin:8mm}}";
+}
 function fitPrintSheets(){
   const area = $("#printArea");
   const sheets = [].slice.call(area.querySelectorAll(".sheet"));
@@ -3268,11 +3431,11 @@ function fitPrintSheets(){
       if(avail > 0 && need[i] > avail) z = Math.max(FIT_FLOOR, (avail/need[i]) - 0.004);
       if(z < min) min = z;
       if(z < 1){
-        const h = (PAGE_MM / z).toFixed(2) + "mm";
+        const h = (PAGE_H / z).toFixed(2) + "mm";
         if(zoomOK){ pg.style.zoom = z.toFixed(4); pg.style.height = h; }
         else { pg.style.transform = "scale(" + z.toFixed(4) + ")";
                pg.style.width = (100/z).toFixed(3) + "%"; pg.style.height = h; }
-      } else { pg.style.height = PAGE_MM + "mm"; }
+      } else { pg.style.height = PAGE_H + "mm"; }
     });
   }catch(e){}
   document.body.classList.remove("pmeasure");
@@ -3379,6 +3542,276 @@ function rowsSheet(f, list, per){
       ${signRow(f, chunk[chunk.length-1])}<div class="grow"></div>${sheetFoot(f)}</div></div>`);
   }
   return sheets.join("");
+}
+
+/* ============================================================
+   ฟอร์มรายเดือน — หน้าจอกรอก + ใบพิมพ์ + CSV  (FM-TB-011)
+   ============================================================ */
+function exportMonthCSV(f, list){
+  const items = allItems(f);
+  const cols = ["ID","ปี","เดือน","วันที่"]
+    .concat(items.map(i=> i.k + " " + i.t))
+    .concat(["ผู้ตรวจสอบ","ผู้ทวนสอบ","วันที่ทวนสอบ", f.code + " " + f.rev]);
+  const q = v => '"' + String(v==null?"":v).replace(/"/g,'""') + '"';
+  const lines = [cols.map(q).join(",")];
+  let nrow = 0;
+  list.forEach(r=>{
+    const ym = ymOf(r), n = daysInMonth(ym), p = ym.split("-");
+    for(let d=1; d<=n; d++){
+      if(!items.some(i=> dayVal(r, i.k, d) !== "")) continue;
+      const iso = ym + "-" + String(d).padStart(2,"0");
+      lines.push([r.id, +p[0]||"", +p[1]||"", thDate(iso)]
+        .concat(items.map(i=> dayVal(r, i.k, d)))
+        .concat([r.inspectorName||"", r.verifierName||"", thDate(r.verifyDate), f.eff])
+        .map(q).join(","));
+      nrow++;
+    }
+  });
+  download(f.code + "-" + todayISO() + ".csv", lines.join("\r\n"));
+  toast("ส่งออก " + nrow + " วัน (" + list.length + " เดือน)");
+}
+
+/* ---------- ใบพิมพ์: ตารางทั้งเดือน 1 แผ่น กระดาษแนวนอน ---------- */
+function monthSheet(f, r){
+  const ym = ymOf(r), n = daysInMonth(ym), items = allItems(f);
+  const days = []; for(let d=1; d<=n; d++) days.push(d);
+  const blanks = days.map(()=> "<td></td>").join("");
+  const dw = (188 / n).toFixed(2) + "mm";
+  const head = '<tr><th rowspan="2" style="width:13mm">ลำดับที่</th>'
+    + '<th rowspan="2" class="nm" style="width:72mm">รายการตรวจสอบ</th>'
+    + '<th colspan="' + n + '">วันที่ตรวจสอบ</th></tr><tr>'
+    + days.map(d=> '<th class="dcol" style="width:' + dw + '">' + d + '</th>').join("") + '</tr>';
+  let rows = "", lastSec = null;
+  f.groups.forEach(g=>{
+    if(g.sec !== lastSec){
+      lastSec = g.sec;
+      rows += '<tr class="sec"><td colspan="2">' + esc(g.sec) + '</td>' + blanks + '</tr>';
+    }
+    const span = g.items.length + (g.t ? 1 : 0);
+    let lead = '<td class="c" rowspan="' + span + '">' + esc(g.n || "") + '</td>';
+    if(g.t){
+      rows += '<tr>' + lead + '<td class="nm"><b>' + esc(g.t) + '</b></td>' + blanks + '</tr>';
+      lead = "";
+    }
+    g.items.forEach((i, ix)=>{
+      rows += '<tr>' + (ix === 0 ? lead : "") + '<td class="nm">' + esc(i.t) + '</td>'
+        + days.map(d=> '<td class="c">' + esc(dayVal(r, i.k, d)) + '</td>').join("") + '</tr>';
+    });
+  });
+  const nick = shortName(r.inspectorName);
+  rows += '<tr class="ins"><td colspan="2" class="nm"><b>ผู้ตรวจสอบ</b></td>'
+    + days.map(d=> '<td class="c">' + (items.some(i=> dayVal(r, i.k, d) !== "") ? esc(nick) : "") + '</td>').join("")
+    + '</tr>';
+  return '<div class="sheet month"><div class="pg">' + sheetHead(f, "ประจำเดือน " + thMonth(ym))
+    + '<table><thead>' + head + '</thead><tbody>' + rows + '</tbody></table>'
+    + (f.note ? '<div class="note">' + esc(f.note) + '</div>' : "")
+    + signRow(f, r) + '<div class="grow"></div>' + sheetFoot(f) + '</div></div>';
+}
+
+/* ---------- หน้าจอกรอก: หนึ่งใบ = หนึ่งเดือน ---------- */
+function viewMonthForm(app){
+  const f = FORMS[state.fid];
+  const existing = state.id ? recs(f.id).find(r=> r.id===state.id) : null;
+  const draft = state.draft;
+  const rec = (draft && draft.formId===f.id && (state.id ? draft.id===state.id : !recs(f.id).some(r=> r.id===draft.id)))
+    ? draft
+    : (existing ? JSON.parse(JSON.stringify(existing)) : newRecord(f));
+  if(!rec.month) rec.month = thisMonth();
+  rec.date = rec.month + "-01";
+  state.draft = rec;
+  setTitle(f.title, (existing ? "แก้ไขตาราง" : "บันทึกใหม่") + " · " + f.code + " " + f.rev);
+
+  const items = allItems(f);
+  const GOOD = String(f.scale[0].v), BAD = String(f.scale[1].v);
+  const nDays = daysInMonth(rec.month);
+  const days = []; for(let d=1; d<=nDays; d++) days.push(d);
+  const todayD = (thisMonth() === rec.month) ? new Date().getDate() : 0;
+
+  /* ---- ข้อมูลหลัก ---- */
+  const pHead = el("div","panel"); pHead.appendChild(el("h2",null,"ข้อมูลหลัก"));
+  const bHead = el("div","body"); const fldsH = el("div","fields");
+  f.header.forEach(fd=> fldsH.appendChild(fieldNode(fd, rec, ()=> redraw())));
+  bHead.appendChild(fldsH);
+  const other = recs(f.id).filter(x=> x.id !== rec.id && ymOf(x) === rec.month).length;
+  bHead.appendChild(el("div","hint", other
+    ? "⚠ เดือนนี้มีตารางบันทึกไว้แล้ว — ควรกลับไปเปิดตารางเดิมมาแก้ไข แทนการสร้างใบใหม่"
+    : "หนึ่งตาราง = หนึ่งเดือน · เปลี่ยนเดือนแล้วจำนวนวันจะปรับให้อัตโนมัติ (เดือนนี้มี " + nDays + " วัน)"));
+  pHead.appendChild(bHead); app.appendChild(pHead);
+
+  /* ---- การติ๊ก ---- */
+  const pItems = el("div","panel");
+  pItems.appendChild(el("h2", null, "การตรวจสอบ · " + thMonth(rec.month)));
+  const bItems = el("div","body");
+
+  const tb = el("div","toolbar");
+  const allBtn = el("button","btn primary","✅ ติ๊กปกติทั้งเดือน (" + nDays + " วัน)");
+  allBtn.title = "ติ๊ก “" + GOOD + "” ทุกข้อ ทุกวันของเดือนนี้ ในคลิกเดียว";
+  allBtn.onclick = ()=>{
+    if(!confirm("ติ๊ก “" + GOOD + "” ทุกข้อ ทั้ง " + nDays + " วันของ" + thMonth(rec.month) + " ?")) return;
+    days.forEach(d=> fillDay(d, GOOD));
+    paintAll(); toast("ติ๊กปกติทั้งเดือนแล้ว");
+  };
+  tb.appendChild(allBtn);
+  if(todayD){
+    const tdBtn = el("button","btn","✅ ติ๊กปกติถึงวันนี้ (1–" + todayD + ")");
+    tdBtn.title = "ติ๊กปกติตั้งแต่วันที่ 1 ถึงวันนี้";
+    tdBtn.onclick = ()=>{
+      for(let d=1; d<=todayD; d++) fillDay(d, GOOD);
+      paintAll(); toast("ติ๊กปกติถึงวันที่ " + todayD + " แล้ว");
+    };
+    tb.appendChild(tdBtn);
+  }
+  const clrBtn = el("button","btn","ล้างทั้งหมด");
+  clrBtn.onclick = ()=>{
+    if(!confirm("ล้างการติ๊กทั้งเดือน?")) return;
+    rec.items = {}; paintAll(); toast("ล้างแล้ว");
+  };
+  tb.appendChild(clrBtn);
+  bItems.appendChild(tb);
+
+  bItems.appendChild(el("div","count-note",
+    "แตะ “วันที่” หนึ่งครั้ง = ติ๊กปกติทั้งแถวของวันนั้นให้เลย · แตะซ้ำอีกครั้ง = ล้างวันนั้น · แตะช่องในตารางเพื่อสลับ " + GOOD + " → " + BAD + " → ว่าง"));
+
+  /* แถบแสดงการติ๊กของทุกวันในเดือน */
+  const strip = el("div","daystrip");
+  bItems.appendChild(strip);
+  bItems.appendChild(el("div","hint","สีเขียว = ตรวจครบทุกข้อ · สีส้ม = ติ๊กยังไม่ครบ · สีแดง = มีรายการผิดปกติ · สีขาว = ยังไม่ได้ตรวจ"));
+
+  /* ตารางเต็ม รายการ x วัน */
+  const wrap = el("div","tablewrap mwrap"); wrap.style.marginTop = "12px";
+  let html = '<table class="mgrid"><thead><tr><th class="itm">รายการตรวจสอบ</th>'
+    + days.map(d=> '<th class="dh" data-day="' + d + '" title="ติ๊กปกติทั้งวันที่ ' + d + '">' + d + '</th>').join("")
+    + '</tr></thead><tbody>';
+  let lastSec = null;
+  f.groups.forEach(g=>{
+    if(g.sec !== lastSec){
+      lastSec = g.sec;
+      html += '<tr class="sec"><td class="itm" colspan="' + (nDays+1) + '">' + esc(g.sec) + '</td></tr>';
+    }
+    if(g.t) html += '<tr class="gt"><td class="itm" colspan="' + (nDays+1) + '">' + esc((g.n ? g.n + ". " : "") + g.t) + '</td></tr>';
+    g.items.forEach(i=>{
+      html += '<tr><td class="itm">' + esc(i.t) + '</td>'
+        + days.map(d=> '<td class="cell" data-k="' + esc(i.k) + '" data-d="' + d + '"></td>').join("") + '</tr>';
+    });
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+  bItems.appendChild(wrap);
+
+  const sb = el("div","scorebox");
+  bItems.appendChild(sb);
+  pItems.appendChild(bItems); app.appendChild(pItems);
+
+  /* ---- ผู้ตรวจ / ผู้ทวนสอบ ---- */
+  const pFoot = el("div","panel"); pFoot.appendChild(el("h2",null,"ผู้ตรวจสอบ / การทวนสอบ"));
+  const bFoot = el("div","body"); const fldsF = el("div","fields");
+  f.footer.forEach(fd=> fldsF.appendChild(fieldNode(fd, rec, ()=>{})));
+  bFoot.appendChild(fldsF);
+  if(f.note) bFoot.appendChild(el("div","hint", esc(f.note).replace(/\n/g,"<br>")));
+  pFoot.appendChild(bFoot); app.appendChild(pFoot);
+
+  const bar = el("div","bar");
+  const cancel = el("button","btn","ยกเลิก"); cancel.onclick = ()=> go("list",{fid:f.id});
+  const saveP = el("button","btn","บันทึก + พิมพ์");
+  saveP.onclick = ()=>{ if(commit()) doPrint(f, [rec]); };
+  const saveB = el("button","btn primary","บันทึก");
+  saveB.onclick = ()=>{ if(commit()) go("list",{fid:f.id}); };
+  bar.append(cancel, saveP, saveB); app.appendChild(bar);
+
+  /* ---- ตัวช่วยของหน้านี้ ---- */
+  const chips = {};
+  const tbl = wrap.querySelector("table");
+  drawStrip(); paintAll();
+
+  tbl.onclick = (e)=>{
+    const dh = e.target.closest(".dh");
+    if(dh){ toggleDay(+dh.dataset.day); return; }
+    const td = e.target.closest(".cell");
+    if(!td) return;
+    const k = td.dataset.k, d = +td.dataset.d;
+    const cur = dayVal(rec, k, d);
+    setDayVal(rec, k, d, cur === "" ? GOOD : cur === GOOD ? BAD : "");
+    paintCell(td); paintDay(d); updateSum();
+  };
+
+  function fillDay(d, v){ items.forEach(i=> setDayVal(rec, i.k, d, v)); }
+  function statOf(d){
+    let c = 0, bad = 0;
+    items.forEach(i=>{ const v = dayVal(rec, i.k, d); if(v !== ""){ c++; if(v === BAD) bad++; } });
+    return {c, bad, full: c === items.length};
+  }
+  function toggleDay(d){
+    const st = statOf(d);
+    if(st.full && !st.bad){ fillDay(d, ""); toast("ล้างวันที่ " + d + " แล้ว"); }
+    else { fillDay(d, GOOD); toast("ติ๊กปกติทั้งวันที่ " + d + " แล้ว"); }
+    paintCol(d); paintDay(d); updateSum();
+  }
+  function drawStrip(){
+    strip.innerHTML = "";
+    days.forEach(d=>{
+      const b = el("button","dchip","");
+      b.title = "กดครั้งเดียว = ติ๊กปกติทั้งวันที่ " + d + " · กดซ้ำเพื่อล้างวันนั้น";
+      b.onclick = ()=> toggleDay(d);
+      chips[d] = b; strip.appendChild(b);
+    });
+  }
+  function paintDay(d){
+    const b = chips[d]; if(!b) return;
+    const st = statOf(d);
+    b.className = "dchip " + (st.bad ? "bad" : st.full ? "full" : st.c ? "part" : "") + (d === todayD ? " today" : "");
+    b.innerHTML = d + "<small>" + (st.bad ? "ผิดปกติ " + st.bad : st.full ? "ครบ" : st.c ? st.c + "/" + items.length : "ยังไม่ตรวจ") + "</small>";
+  }
+  function paintCell(td){
+    const v = dayVal(rec, td.dataset.k, +td.dataset.d);
+    td.textContent = v;
+    td.className = "cell" + (v === GOOD ? " ok" : v === BAD ? " ng" : "");
+  }
+  function paintCol(d){ tbl.querySelectorAll('.cell[data-d="' + d + '"]').forEach(paintCell); }
+  function paintAll(){
+    tbl.querySelectorAll(".cell").forEach(paintCell);
+    days.forEach(paintDay);
+    updateSum();
+  }
+  function updateSum(){
+    const sc = monthScore(f, rec);
+    sb.innerHTML = '<div>ตรวจแล้ว <b>' + sc.days + '</b> / ' + sc.total + ' วัน</div>'
+      + '<div>ครบทุกข้อ <b>' + sc.full + '</b> วัน</div>'
+      + (sc.ng
+        ? '<div style="color:var(--er)">พบผิดปกติ <b style="color:var(--er)">' + sc.ng + '</b> ช่อง — ' + sc.ngDays.map(d=>"วันที่ "+d).join(", ") + '</div>'
+        : '<div>ผลตรวจ <b style="color:var(--ok)">ปกติทุกช่องที่ติ๊ก</b></div>');
+  }
+  function redraw(){
+    rec.date = (rec.month || "") + "-01";
+    state.draft = rec;
+    go("form", {fid:f.id, id:state.id, keepDraft:1});
+  }
+  function commit(){
+    if(!rec.month){ alert("กรุณาเลือกเดือนที่ตรวจสอบ"); return false; }
+    rec.date = rec.month + "-01";
+    const dup = recs(f.id).find(x=> x.id !== rec.id && ymOf(x) === rec.month);
+    if(dup){
+      alert("เดือน " + thMonth(rec.month) + " มีตารางบันทึกไว้แล้ว\nกรุณากลับไปเปิดตารางเดิมมาแก้ไข แทนการบันทึกใบใหม่");
+      return false;
+    }
+    const sc = monthScore(f, rec);
+    if(!sc.days && !confirm("ยังไม่ได้ติ๊กวันไหนเลย — บันทึกตารางเปล่าไว้ก่อนหรือไม่?")) return false;
+    rec.updatedAt = Date.now();
+    const autoSig = fillMissingSigners(f, rec);
+    f.footer.filter(x=> x.type==="sign").forEach(fd=>{
+      rememberSigner(rec[fd.k+"Name"], rec[fd.k+"Pos"] || fd.pos);
+      rememberSignature(rec[fd.k+"Name"], rec[fd.k]);
+    });
+    keepSigners(f, rec);
+    if(autoSig.length) setTimeout(()=> toast("เติมลายเซ็น" + autoSig.join(" / ") + " จากที่เคยเซ็นไว้ให้อัตโนมัติ"), 1500);
+    refreshSignerList();
+    const list = recs(f.id);
+    const i = list.findIndex(r=> r.id === rec.id);
+    if(i >= 0) list[i] = rec; else list.push(JSON.parse(JSON.stringify(rec)));
+    state.draft = null;
+    save();
+    if(SERVER) pushToServer(f.id, [rec]); else toast("บันทึกแล้ว");
+    return true;
+  }
 }
 
 /* ============================================================

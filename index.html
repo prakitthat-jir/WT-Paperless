@@ -602,6 +602,14 @@ body.pmeasure #printArea{display:block!important;position:fixed!important;left:-
 #printArea .sheet.dense .note{font-size:10.5pt}
 #printArea .note{font-size:11pt;margin-top:5px;white-space:pre-line;line-height:1.25}
 
+/* ---- กราฟเทียบเกรดในใบสรุปรวม (ขาวดำ พิมพ์แล้วอ่านออกทุกเครื่อง) ---- */
+#printArea .chart{margin-top:6px}
+#printArea .chart .ttl2{font-weight:700;font-size:12pt;margin-bottom:3px}
+#printArea .chart table{font-size:11.5pt}
+#printArea .chart .gbar{height:4.6mm;border:1px solid #666;background:#fff}
+#printArea .chart .gbar span{display:block;height:100%;background:#4a4a4a;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+
 /* ---- บรรทัด "มาตรฐานการตรวจสอบ" ใต้ชื่อรายการ (ฟอร์มตรวจรถ) ---- */
 #printArea .std{font-size:10pt;line-height:1.06;color:#222;margin-top:0}
 #printArea .sheet.dense .std{font-size:9.5pt}
@@ -857,12 +865,13 @@ const FORMS = {
     id:"evaluate", icon:"⭐", short:"ประเมินผู้รับเหมา", sheet:"ประเมินการบริการขนส่ง",
     title:"แบบประเมินผู้รับเหมาในการบริการขนส่ง",
     code:"FM-QMR-021", rev:"Rev.01", eff:"30/10/62",
-    printMode:"doc", weighted:1,
+    printMode:"doc", weighted:1, evalMulti:1,
     header:[
       {k:"date", label:"วันที่ประเมิน", type:"date", req:1, def:"today"},
       {k:"contractorCode", label:"รหัสผู้รับเหมา", type:"contractor", req:1},
       {k:"contractor", label:"ชื่อผู้รับเหมา", type:"text", req:1},
-      {k:"truckType", label:"ประเภทรถขนส่ง", type:"select", opts:["รถบรรทุก 6 ล้อ","รถกะบะ"], req:1},
+      {k:"truckType", label:"ประเภทรถขนส่ง", type:"select", opts:["รถบรรทุก 6 ล้อ","รถกะบะ"], req:1,
+       hint:"เติมให้เองจากทะเบียนรถ — ทะเบียนมีพยัญชนะไทย = รถกะบะ, เลขล้วน = รถบรรทุก 6 ล้อ (แก้ทับได้)"},
       {k:"delivery", label:"ประเภทการจัดส่ง", type:"select", opts:["BOX","SHEET"], req:1},
       {k:"round", label:"ครั้งที่ประเมิน", type:"select", opts:["1","2","3","4"], req:1}
     ],
@@ -1354,6 +1363,7 @@ function render(){
   else if(state.view==="list") viewList(app);
   else if(state.view==="form") ((FORMS[state.fid]||{}).monthly ? viewMonthForm : viewForm)(app);
   else if(state.view==="multi") viewMulti(app);
+  else if(state.view==="eval")  viewEval(app);
   else if(state.view==="old"){
     const r = allRecs(state.fid).find(x=>x.id===state.id);
     if(r) viewOld(FORMS[state.fid], r); else go("list",{fid:state.fid});
@@ -1574,23 +1584,32 @@ function viewList(app){
   mSel.onchange = ()=>{ state.filter.m = mSel.value; state.page = 1; render(); };
   const q = el("input"); q.type="text"; q.placeholder="ค้นหา..."; q.value = fl.q||""; q.style.width="180px";
   q.oninput = ()=>{ state.filter.q = q.value; state.page = 1; renderRows(); };
-  const addBtn = el("button","btn primary", f.multi ? "+ บันทึกหลาย"+(f.multi.unit||"รายการ")+"พร้อมกัน" : "+ บันทึกใหม่");
-  addBtn.onclick = ()=> f.multi ? go("multi",{fid:f.id}) : go("form",{fid:f.id, id:null});
-  const addOne = f.multi ? el("button","btn","+ ทีละ"+(f.multi.unit||"รายการ")) : null;
+  const addBtn = el("button","btn primary", f.evalMulti ? "+ ประเมินทีละทะเบียน"
+                    : f.multi ? "+ บันทึกหลาย"+(f.multi.unit||"รายการ")+"พร้อมกัน" : "+ บันทึกใหม่");
+  addBtn.onclick = ()=> f.evalMulti ? go("eval",{fid:f.id})
+                      : f.multi ? go("multi",{fid:f.id}) : go("form",{fid:f.id, id:null});
+  const addOne = (f.multi || f.evalMulti)
+    ? el("button","btn", f.evalMulti ? "+ ทีละราย" : "+ ทีละ"+(f.multi.unit||"รายการ")) : null;
   if(addOne) addOne.onclick = ()=> go("form",{fid:f.id, id:null});
   const quickBtn = f.quickAll ? el("button","btn primary","✅ "+f.quickAll.label) : null;
   if(quickBtn){
     quickBtn.title = "บันทึกผลตรวจผ่านทั้งหมดของรถชุดเดิม เป็นวันที่วันนี้ ในคลิกเดียว";
     quickBtn.onclick = ()=> quickPassAll(f);
   }
-  const prBtn = el("button","btn","🖨 พิมพ์ / PDF");
+  const prBtn = el("button","btn", f.evalMulti ? "🖨 พิมพ์รายบุคคล" : "🖨 พิมพ์ / PDF");
   prBtn.onclick = ()=> doPrint(f, selectedRecords(all));
+  const sumBtn = f.evalMulti ? el("button","btn","🖨 พิมพ์สรุปรวม") : null;
+  if(sumBtn){
+    sumBtn.title = "ตารางสรุปคะแนนและเกรดของทุกใบที่เลือก พร้อมกราฟเทียบเกรด";
+    sumBtn.onclick = ()=> printEvalSummary(f, selectedRecords(all));
+  }
   const csvBtn = el("button","btn","⬇ CSV");
   csvBtn.onclick = ()=> exportCSV(f, filtered(all));
   /* บนคอมพิวเตอร์ .tb-fold คือ display:contents — เรียงเหมือนเดิมทุกอย่าง
      บนมือถือจะยุบเป็นปุ่ม “ตัวกรอง / ส่งออก” เพื่อให้เห็นรายการเร็วขึ้น */
   const fold = el("div","tb-fold");
   fold.append(ySel, mSel, sortBtn, csvBtn, prBtn);
+  if(sumBtn) fold.appendChild(sumBtn);
   const foldBtn = el("button","btn tb-foldbtn","⚙ ตัวกรอง / ส่งออก");
   foldBtn.onclick = ()=>{
     const on = fold.classList.toggle("open");
@@ -1603,7 +1622,10 @@ function viewList(app){
   if(quickBtn) tb.appendChild(quickBtn);
   app.appendChild(tb);
 
-  app.appendChild(el("div","count-note","แตะที่แถวไหนก็ได้เพื่อเปิดดู/แก้ไขรายการนั้น · ปุ่ม “พิมพ์” " + (f.monthly ? "จะพิมพ์เป็นตารางทั้งเดือน 1 แผ่น (กระดาษแนวนอน)" : f.printMode==="doc" ? "จะพิมพ์เป็นใบแยกทีละรายการ" : "จะพิมพ์รวมทั้งวันให้ในใบเดียว")));
+  app.appendChild(el("div","count-note","แตะที่แถวไหนก็ได้เพื่อเปิดดู/แก้ไขรายการนั้น · ปุ่ม “พิมพ์” "
+    + (f.monthly ? "จะพิมพ์เป็นตารางทั้งเดือน 1 แผ่น (กระดาษแนวนอน)"
+     : f.evalMulti ? "จะพิมพ์เป็นใบแยกรายบุคคล ส่วน “พิมพ์สรุปรวม” จะได้ตารางคะแนนทุกคันในใบเดียว"
+     : f.printMode==="doc" ? "จะพิมพ์เป็นใบแยกทีละรายการ" : "จะพิมพ์รวมทั้งวันให้ในใบเดียว")));
   const wrap = el("div","tablewrap cardify");
   app.appendChild(wrap);
   renderRows();
@@ -1822,7 +1844,11 @@ function fieldNode(fd, rec, onChange){
     input.onchange = ()=>{
       const c = MASTER.contractors.find(x=>String(x.code)===input.value);
       rec[fd.k] = input.value;
-      if(c){ rec.contractor = c.name; rec.plate = c.plate; rec.delivery = c.type; }
+      if(c){
+        rec.contractor = c.name; rec.plate = c.plate; rec.delivery = c.type;
+        const tt = truckTypeOf(c.plate);      /* ทะเบียนมีพยัญชนะไทย = กะบะ · เลขล้วน = 6 ล้อ */
+        if(tt) rec.truckType = tt;
+      }
       onChange(true);
     };
   }
@@ -3020,6 +3046,328 @@ function viewMulti(app){
 }
 
 /* ============================================================
+   VIEW: ประเมินผู้รับเหมา — ทีละทะเบียนรถ  (FM-QMR-021)
+   หนึ่งคัน = หนึ่งใบ · ตั้งต้นคะแนนเต็มแล้วหักเฉพาะคันที่มีปัญหา
+   ============================================================ */
+function viewEval(app){
+  const f = FORMS[state.fid] || FORMS.evaluate;
+  const items = allItems(f);
+  const FULL  = items.reduce((a,i)=> a + (Number(i.max)||0), 0);
+  setTitle(f.title, "ประเมินทีละทะเบียนรถ · " + f.code + " " + f.rev);
+
+  const base = newRecord(f);
+  const chosen = new Map();          /* key ของคัน -> {items:{}, suggest:""} */
+  const expanded = new Set();
+  const byKey = new Map();
+  if(state.evalType === undefined) state.evalType = "";
+
+  /* ---- ข้อมูลที่ใช้ร่วมกันทุกคัน ---- */
+  const p1 = el("div","panel"); p1.appendChild(el("h2",null,"ข้อมูลหลัก (ใช้กับทุกคัน)"));
+  const b1 = el("div","body"); const flds = el("div","fields");
+  ["date","round"].forEach(k=>{
+    const fd = f.header.find(x=> x.k === k);
+    if(fd) flds.appendChild(fieldNode(fd, base, ()=>{}));
+  });
+  b1.appendChild(flds);
+  b1.appendChild(el("div","hint", base.inspector
+    ? "ใส่ลายเซ็นผู้ประเมินจากที่เคยเซ็นไว้ให้อัตโนมัติแล้ว — แก้ไขได้โดยกดที่ใบในหน้ารายการ"
+    : "ลายเซ็นผู้ประเมินเพิ่มทีหลังได้ โดยกดที่ใบในหน้ารายการ"));
+  p1.appendChild(b1); app.appendChild(p1);
+
+  /* ---- เลือกทะเบียนรถ ---- */
+  const p2 = el("div","panel"); p2.appendChild(el("h2",null,"เลือกทะเบียนรถที่จะประเมิน"));
+  const b2 = el("div","body");
+
+  const quick = el("div","quickbar");
+  const bAll = el("button","btn primary","เลือกทั้งหมดที่แสดงอยู่");
+  bAll.onclick = ()=>{ shown().forEach(t=> add(t)); draw(); };
+  const bClr = el("button","btn","ล้างที่เลือก");
+  bClr.onclick = ()=>{ chosen.clear(); expanded.clear(); draw(); };
+  quick.append(bAll, bClr);
+  b2.appendChild(quick);
+
+  const chips = el("div","chips");
+  [["","ทั้งหมด"],["BOX","🧊 กล่อง"],["SHEET","📄 แผ่น"]].forEach(([v,lb])=>{
+    const c = el("button","chip", esc(lb));
+    c.dataset.v = v;
+    c.onclick = ()=>{ state.evalType = v; draw(); };
+    chips.appendChild(c);
+  });
+  b2.appendChild(chips);
+
+  const pick = el("div","pickbox"); pick.style.marginTop = "10px";
+  const q = el("input"); q.type = "text"; q.placeholder = "ค้นหาทะเบียนรถ / ชื่อผู้รับเหมา";
+  q.oninput = ()=> draw();
+  pick.appendChild(q);
+  b2.appendChild(pick);
+
+  const note = el("div","count-note"); note.style.marginTop = "10px";
+  b2.appendChild(note);
+  const listWrap = el("div");
+  b2.appendChild(listWrap);
+  p2.appendChild(b2); app.appendChild(p2);
+
+  /* ---- แถบล่าง ---- */
+  const bar = el("div","bar");
+  const cancel = el("button","btn","ยกเลิก"); cancel.onclick = ()=> go("list",{fid:f.id});
+  const one = el("button","btn","กรอกทีละราย"); one.onclick = ()=> go("form",{fid:f.id, id:null});
+  const saveB = el("button","btn primary","บันทึกทั้งหมด");
+  saveB.onclick = commit;
+  bar.append(cancel, one, saveB); app.appendChild(bar);
+
+  draw();
+
+  /* ---------- ข้อมูล ---------- */
+  function keyOf(t){
+    const pk = plateKey(t.plate);
+    return pk ? (t.type||"") + "|" + pk : "เดี่ยว|" + t.men[0].code;
+  }
+  function allTrucks(){
+    const list = truckGroups(conSorted(MASTER.contractors).filter(c=> !c.off));
+    byKey.clear(); list.forEach(t=> byKey.set(keyOf(t), t));
+    return list;
+  }
+  function shown(){
+    const s = q.value.trim().toLowerCase(), t = state.evalType || "";
+    return allTrucks().filter(tk=>
+      (!t || tk.type === t) &&
+      (!s || (String(tk.plate||"") + " " + tk.men.map(c=> c.name + " " + c.code).join(" ")).toLowerCase().includes(s)));
+  }
+  function add(t){
+    const k = keyOf(t);
+    if(chosen.has(k)) return;
+    const o = {items:{}, suggest:""};
+    items.forEach(i=> o.items[i.k] = Number(i.max)||0);   /* ตั้งต้นเต็มทุกข้อ */
+    chosen.set(k, o);
+  }
+  function gradeOf(o){
+    const s = scoreOf(f, {items:o.items});
+    return {sum:s.sum, grade:s.grade, level:s.level};
+  }
+
+  /* ---------- วาดหน้าจอ ---------- */
+  function draw(){
+    const list = shown();
+    chips.querySelectorAll(".chip").forEach(c=> c.classList.toggle("on", c.dataset.v === (state.evalType||"")));
+    saveB.textContent = chosen.size ? "บันทึกทั้งหมด (" + chosen.size + " ใบ)" : "บันทึกทั้งหมด";
+    note.textContent = "แสดง " + list.length + " คัน · เลือกไว้ " + chosen.size + " คัน"
+      + " — ทุกคันตั้งต้นที่ " + FULL + " คะแนน กด “หักคะแนน” เฉพาะคันที่มีปัญหา";
+    listWrap.innerHTML = "";
+    if(!list.length){
+      listWrap.appendChild(el("div","empty","ไม่พบทะเบียนรถตามคำค้น"));
+      return;
+    }
+    list.forEach(t=>{
+      const k = keyOf(t), on = chosen.has(k), o = chosen.get(k);
+      const g = on ? gradeOf(o) : null;
+      const row = el("div","mrow" + (on ? (g.sum === FULL ? " done" : " bad") : ""));
+
+      const head = el("div","head");
+      const cb = el("input"); cb.type = "checkbox"; cb.checked = on;
+      cb.onchange = ()=>{
+        if(cb.checked) add(t); else { chosen.delete(k); expanded.delete(k); }
+        draw();
+      };
+      head.appendChild(cb);
+
+      const nm = el("div","name",
+        esc(t.plate || "ไม่มีทะเบียน")
+        + ' <span class="pill warn" style="margin-left:7px">' + esc(truckTypeOf(t.plate) || "ไม่ทราบประเภทรถ") + '</span>'
+        + ' <span class="pill" style="background:var(--bg2);color:var(--mu)">' + esc(t.type || "") + '</span>'
+        + '<div class="mu sm2" style="font-weight:600;margin-top:3px">' + esc(t.men.map(c=> c.name).join("  ·  ")) + '</div>');
+      head.appendChild(nm);
+
+      if(on){
+        head.appendChild(el("span","pill " + (g.sum === FULL ? "ok" : g.sum >= 80 ? "warn" : "ng"),
+          g.sum + " คะแนน · เกรด " + esc(g.grade)));
+        const bEx = el("button","btn sm", expanded.has(k) ? "ซ่อนคะแนน ▲" : "หักคะแนน ▼");
+        bEx.onclick = ()=>{ expanded.has(k) ? expanded.delete(k) : expanded.add(k); draw(); };
+        const bFull = el("button","btn sm","ให้เต็ม");
+        bFull.onclick = ()=>{ items.forEach(i=> o.items[i.k] = Number(i.max)||0); o.suggest = ""; draw(); };
+        head.append(bEx, bFull);
+      }
+      row.appendChild(head);
+
+      if(on && expanded.has(k)){
+        const body = el("div","body2");
+        f.groups.forEach(gr=>{
+          body.appendChild(el("div","grp", esc(gr.t)));
+          gr.items.forEach(it=>{
+            const line = el("div","item");
+            line.appendChild(el("div","txt", "<b>" + esc(it.k) + " " + esc(it.t) + "</b><small>คะแนนเต็ม " + it.max + "</small>"));
+            const inp = el("input"); inp.type = "number"; inp.min = 0; inp.max = it.max; inp.step = 1;
+            inp.value = o.items[it.k];
+            inp.style.cssText = "width:88px;flex:none;text-align:center;font-weight:800";
+            inp.oninput = ()=>{
+              let v = Math.round(Number(inp.value));
+              if(!isFinite(v)) v = 0;
+              v = Math.max(0, Math.min(Number(it.max)||0, v));
+              o.items[it.k] = v;
+              const g2 = gradeOf(o);
+              const pill = head.querySelector(".pill.ok, .pill.warn, .pill.ng");
+              if(pill){
+                pill.className = "pill " + (g2.sum === FULL ? "ok" : g2.sum >= 80 ? "warn" : "ng");
+                pill.textContent = g2.sum + " คะแนน · เกรด " + g2.grade;
+              }
+              row.className = "mrow" + (g2.sum === FULL ? " done" : " bad");
+            };
+            inp.onblur = ()=>{ inp.value = o.items[it.k]; };
+            line.appendChild(inp);
+            body.appendChild(line);
+          });
+        });
+        const sg = el("label","f","<span>ข้อเสนอแนะในการปรับปรุง (เฉพาะคันนี้)</span>");
+        const ta = el("textarea"); ta.value = o.suggest || "";
+        ta.oninput = ()=>{ o.suggest = ta.value; };
+        sg.appendChild(ta);
+        body.appendChild(sg);
+        row.appendChild(body);
+      }
+      listWrap.appendChild(row);
+    });
+  }
+
+  /* ---------- บันทึก ---------- */
+  function commit(){
+    if(!chosen.size){ alert("ยังไม่ได้เลือกทะเบียนรถ"); return; }
+    for(const fd of f.header.filter(x=> ["date","round"].includes(x.k))){
+      if(fd.req && !base[fd.k]){ alert("กรุณากรอก: " + fd.label); return; }
+    }
+    /* กันประเมินซ้ำ — ปีเดียวกัน + ครั้งที่เดียวกัน + ผู้รับเหมาคนเดียวกัน */
+    const yr = String(base.date||"").slice(0,4);
+    const dup = [];
+    chosen.forEach((o,k)=>{
+      const t = byKey.get(k); if(!t) return;
+      const c1 = t.men[0];
+      if(allRecs(f.id).some(r=> String(r.round) === String(base.round)
+                             && String(r.date||"").slice(0,4) === yr
+                             && String(r.contractorCode) === String(c1.code)))
+        dup.push(t.plate || c1.name);
+    });
+    if(dup.length && !confirm("มี " + dup.length + " คันที่ประเมินครั้งที่ " + base.round + " ของปีนี้ไปแล้ว\n("
+        + dup.slice(0,5).join(", ") + (dup.length>5 ? " …" : "") + ")\n\nจะบันทึกซ้ำอีกใบใช่ไหม?")) return;
+
+    f.header.concat(f.footer).forEach(fd=>{ if(fd.remember) DB.prefs[f.id+"."+fd.k] = base[fd.k]; });
+    const autoSig = fillMissingSigners(f, base);
+    f.footer.filter(x=> x.type === "sign").forEach(fd=>{
+      rememberSigner(base[fd.k+"Name"], base[fd.k+"Pos"] || fd.pos);
+      rememberSignature(base[fd.k+"Name"], base[fd.k]);
+    });
+    keepSigners(f, base);
+    if(autoSig.length) setTimeout(()=> toast("เติมลายเซ็น" + autoSig.join(" / ") + " จากที่เคยเซ็นไว้ให้อัตโนมัติ"), 1500);
+
+    const out = [];
+    chosen.forEach((o,k)=>{
+      const t = byKey.get(k); if(!t) return;
+      const c1 = t.men[0], c2 = t.men[1];
+      const r = JSON.parse(JSON.stringify(base));
+      r.id = uid(); r.createdAt = Date.now();
+      r.items = o.items;
+      r.contractorCode = c1.code;
+      r.contractor = c2 ? (c1.name + " / " + c2.name) : c1.name;   /* รถคันเดียว 2 คน = ใบเดียว ขึ้นชื่อทั้งคู่ */
+      if(c2){ r.contractor2 = c2.name; r.contractorCode2 = c2.code; }
+      r.plate = t.plate || "";
+      r.truckType = truckTypeOf(t.plate) || "";
+      r.delivery = t.type || c1.type || "";
+      if(o.suggest) r.suggest = o.suggest;
+      recs(f.id).push(r); out.push(r);
+    });
+    save();
+    if(SERVER) pushToServer(f.id, out); else toast("บันทึก " + out.length + " ใบแล้ว");
+    go("list",{fid:f.id});
+  }
+}
+
+/* ============================================================
+   ใบพิมพ์ "สรุปรวม" ของแบบประเมิน — ตารางคะแนน + กราฟเทียบเกรด
+   ============================================================ */
+function gradeRange(f, i){
+  const g = f.grades[i];
+  const hi = i === 0 ? 100 : (f.grades[i-1].min - 1);
+  return g.min + "–" + hi;
+}
+function gradeChart(f, dist, maxN, total){
+  const rows = f.grades.map((g,i)=>{
+    const n = dist[g.g] || 0;
+    const w = Math.round(n / maxN * 100);
+    const pct = total ? Math.round(n / total * 1000) / 10 : 0;
+    return '<tr><td class="c"><b>' + esc(g.g) + '</b></td><td class="c">' + esc(gradeRange(f,i)) + '</td><td>' + esc(g.lv) + '</td>'
+      + '<td class="c"><b>' + n + '</b></td><td class="c">' + pct + '%</td>'
+      + '<td><div class="gbar"><span style="width:' + w + '%"></span></div></td></tr>';
+  }).join("");
+  return '<div class="chart"><div class="ttl2">สรุปจำนวนผู้รับเหมาแยกตามเกรด (รวม ' + total + ' คัน)</div>'
+    + '<table><thead><tr><th style="width:38px">เกรด</th><th style="width:66px">ช่วงคะแนน</th>'
+    + '<th style="text-align:left;width:96px">ระดับ</th><th style="width:48px">จำนวน</th>'
+    + '<th style="width:54px">สัดส่วน</th><th>เทียบสัดส่วน</th></tr></thead>'
+    + '<tbody>' + rows + '</tbody></table></div>';
+}
+/* ใบประเมินเก่าไม่ได้เก็บทะเบียนรถ — เทียบจากรหัสผู้รับเหมาใน AVL ให้ */
+function plateOfRec(r){
+  if(r.plate) return r.plate;
+  const c = (MASTER.contractors||[]).find(x=> String(x.code) === String(r.contractorCode));
+  return c ? (c.plate || "") : "";
+}
+function evalSummarySheets(f, list, per){
+  per = per || 22;
+  const dist = {}; f.grades.forEach(g=> dist[g.g] = 0);
+  list.forEach(r=>{ const s = scoreOf(f, r); dist[s.grade] = (dist[s.grade] || 0) + 1; });
+  const maxN = Math.max(1, ...f.grades.map(g=> dist[g.g] || 0));
+  const dates  = [...new Set(list.map(r=> r.date).filter(Boolean))].sort();
+  const rounds = [...new Set(list.map(r=> String(r.round||"")).filter(Boolean))].sort();
+  const sub = "สรุปผลการประเมิน"
+    + (rounds.length === 1 ? " ครั้งที่ " + rounds[0] : rounds.length ? " ครั้งที่ " + rounds.join(", ") : "")
+    + (dates.length ? (dates.length === 1 ? "  ·  วันที่ " + thLong(dates[0])
+                     : "  ·  ระหว่างวันที่ " + thDate(dates[0]) + " ถึง " + thDate(dates[dates.length-1])) : "")
+    + "  ·  รวม " + list.length + " คัน";
+  const nPage = Math.max(1, Math.ceil(list.length / per));
+  const sheets = [];
+  for(let s = 0, pg = 1; s < list.length; s += per, pg++){
+    const chunk = list.slice(s, s + per), last = pg === nPage;
+    const rows = chunk.map((r,i)=>{
+      const sc = scoreOf(f, r);
+      return '<tr><td class="c">' + (s+i+1) + '</td><td class="c">' + esc(plateOfRec(r) || "—") + '</td>'
+        + '<td>' + esc(r.contractor || "") + '</td><td class="c">' + esc(r.truckType || "") + '</td>'
+        + '<td class="c">' + esc(r.delivery || "") + '</td><td class="c"><b>' + sc.sum + '</b></td>'
+        + '<td class="c"><b>' + esc(sc.grade) + '</b></td><td class="c">' + esc(sc.level) + '</td></tr>';
+    }).join("");
+    sheets.push('<div class="sheet dense"><div class="pg">'
+      + sheetHead(f, sub + (nPage > 1 ? "  ·  หน้า " + pg + "/" + nPage : ""))
+      + '<table><thead><tr><th style="width:32px">ที่</th><th style="width:86px">ทะเบียนรถ</th>'
+      + '<th style="text-align:left">ชื่อผู้รับเหมา</th><th style="width:94px">ประเภทรถ</th>'
+      + '<th style="width:54px">จัดส่ง</th><th style="width:56px">คะแนน</th><th style="width:42px">เกรด</th>'
+      + '<th style="width:70px">ระดับ</th></tr></thead><tbody>' + rows + '</tbody></table>'
+      + (last ? gradeChart(f, dist, maxN, list.length) : "")
+      + (last ? signRow(f, list[list.length-1]) : "")
+      + '<div class="grow"></div>' + sheetFoot(f) + '</div></div>');
+  }
+  return sheets.join("");
+}
+function printEvalSummary(f, list){
+  if(!list || !list.length){ alert("ไม่มีรายการให้พิมพ์"); return; }
+  list = list.slice().sort((a,b)=>
+    String(a.delivery||"").localeCompare(String(b.delivery||"")) ||
+    String(a.plate||"").localeCompare(String(b.plate||""), "th") ||
+    String(a.contractor||"").localeCompare(String(b.contractor||""), "th"));
+  const CAP = 400;
+  if(list.length > CAP){
+    if(!confirm("เลือกไว้ " + list.length.toLocaleString("th-TH") + " ใบ — จะพิมพ์เฉพาะ " + CAP + " ใบแรกเพื่อไม่ให้เอกสารยาวเกินไป")) return;
+    list = list.slice(0, CAP);
+  }
+  const area = $("#printArea");
+  setPaper(false);
+  let per = 22;
+  for(let pass = 0; pass < 4; pass++){
+    area.innerHTML = evalSummarySheets(f, list, per);
+    const z = fitPrintSheets();
+    if(z >= FIT_MIN || per <= 6) break;
+    const nxt = Math.max(6, Math.floor(per * z / FIT_MIN));
+    if(nxt >= per) break;
+    per = nxt;
+  }
+  window.print();
+}
+
+/* ============================================================
    VIEW: MASTER DATA
    ============================================================ */
 function viewMaster(app){
@@ -3063,13 +3411,7 @@ function viewMaster(app){
         (t==="OFF" ? !!c.off : (!c.off && (!t || c.type===t))) &&
         (!s2 || (String(c.code)+c.name+c.plate+(c.contact||"")+(c.tel1||"")).toLowerCase().includes(s2)));
       /* จับคนที่ใช้รถคันเดียวกันมาไว้แถวเดียวกัน — หนึ่งแถว = หนึ่งคัน */
-      const trucks = [], seen = {};
-      list.forEach(c=>{
-        const p = String(c.plate||"").replace(/[s-]/g,"").toLowerCase();
-        const k = p ? (c.type||"") + "|" + p : "เดี่ยว|" + c.code;
-        if(seen[k] === undefined){ seen[k] = trucks.length; trucks.push({plate:c.plate, type:c.type, men:[]}); }
-        trucks[seen[k]].men.push(c);
-      });
+      const trucks = truckGroups(list);
       /* ช่องไหนมีข้อมูลของคนเดียว ก็แสดงบรรทัดเดียว ไม่ต้องมีขีดว่างให้รก */
       const lines = (men, fn)=>{
         const vals = men.map(c=> fn(c) || ""), nz = vals.filter(v=> v);
@@ -3237,6 +3579,27 @@ function viewMasterEdit(app){
 }
 /* ผู้รับเหมา: เรียงตามประเภท (กล่อง → แผ่น) แล้วตามลำดับในผังรายชื่อ */
 const CON_TYPE_TH = {BOX:"กล่อง", SHEET:"แผ่น"};
+/* ประเภทรถขนส่งเดาจากทะเบียน: มีพยัญชนะไทย = รถกะบะ · ตัวเลขล้วน = รถบรรทุก 6 ล้อ
+   (ตรวจกับข้อมูลจริง 4 ก.ย. 69 — ทะเบียนที่ใช้งาน 82 คันเข้าเกณฑ์ทุกคัน
+    และตรงกับใบประเมินเก่า 448 จาก 456 ใบ ที่เหลือแก้ทับเองได้ในหน้ากรอก) */
+function truckTypeOf(plate){
+  const p = String(plate||"").trim();
+  if(!p) return "";
+  return /[ก-ฮ]/.test(p) ? "รถกะบะ" : "รถบรรทุก 6 ล้อ";
+}
+/* ทะเบียนเดียวกัน = คันเดียวกัน — ตัดขีดกับช่องว่างออกก่อนเทียบ */
+const plateKey = p => String(p||"").replace(/[\s-]/g, "").toLowerCase();
+/* จัดผู้รับเหมาเป็น "คัน" — คนที่ใช้ทะเบียนเดียวกันอยู่คันเดียวกัน (คนไม่มีทะเบียน = คันของตัวเอง) */
+function truckGroups(list){
+  const trucks = [], seen = {};
+  (list||[]).forEach(c=>{
+    const p = plateKey(c.plate);
+    const k = p ? (c.type||"") + "|" + p : "เดี่ยว|" + c.code;
+    if(seen[k] === undefined){ seen[k] = trucks.length; trucks.push({plate:c.plate, type:c.type, men:[]}); }
+    trucks[seen[k]].men.push(c);
+  });
+  return trucks;
+}
 function conSorted(list){
   const rank = t=> t==="BOX" ? 0 : t==="SHEET" ? 1 : 2;
   return (list||[]).slice().sort((a,b)=>
@@ -3248,7 +3611,7 @@ function conSorted(list){
 function conDuo(list){
   const g = {}, out = {};
   (list||[]).filter(c=> !c.off).forEach(c=>{
-    const p = String(c.plate||"").replace(/[s-]/g,"").toLowerCase();
+    const p = plateKey(c.plate);
     const k = p ? (c.type||"") + "|" + p : "เดี่ยว|" + c.code;      /* ไม่มีทะเบียน = นับเป็นคันของตัวเอง */
     (g[k] = g[k] || []).push(c);
   });

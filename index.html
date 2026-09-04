@@ -101,23 +101,97 @@ button,input,select,textarea{font-family:inherit;font-size:15px;color:inherit}
 .cnt{flex:1;min-width:0;width:100%;padding:16px 22px 96px;max-width:1180px;animation:fadeUp .3s ease both}
 @media(min-width:821px){ .cnt{margin-inline:auto} }
 
-/* ───────── Hero / Cards ───────── */
-.hero{border-radius:var(--rl);padding:18px 20px;margin-bottom:15px;color:#fff;
-  background:linear-gradient(135deg,var(--fa) 0%,var(--fb) 100%);box-shadow:0 10px 26px -12px rgba(19,122,57,.7)}
-.hero h1{margin:0 0 4px;font-size:1.35rem;font-weight:800}
-.hero p{margin:0;opacity:.92;font-size:.9rem}
-.grid{display:grid;gap:13px;grid-template-columns:repeat(auto-fill,minmax(258px,1fr))}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:15px;
-  box-shadow:var(--sh-sm);cursor:pointer;display:flex;gap:13px;align-items:flex-start;text-align:left;width:100%;
-  transition:box-shadow .25s,transform .2s,border-color .2s;font-family:inherit;color:inherit}
-.card:hover{box-shadow:var(--sh-md);transform:translateY(-2px);border-color:#cfe8d8}
-.card .ico{width:44px;height:44px;border-radius:12px;flex:none;display:grid;place-items:center;font-size:22px;
+/* ───────── เมนูข้าง / หัวเรื่อง — ปรับให้อ่านชื่อฟอร์มได้เต็ม ───────── */
+:root{--nav-w:230px}
+.sidebar{display:flex;flex-direction:column;padding:14px 0 16px}
+.navsec{display:flex;align-items:center;gap:9px}
+.navsec::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.22)}
+.nav{align-items:flex-start}
+.nav .tx{white-space:normal;line-height:1.3;text-overflow:clip}
+.nav .ic,.nav .n{margin-top:1px}
+.side-foot{margin:auto 12px 0;padding:13px 4px 0;border-top:1px solid rgba(255,255,255,.18);
+  color:rgba(255,255,255,.6);font-size:.67rem;line-height:1.55}
+.side-foot b{display:block;color:rgba(255,255,255,.9);font-size:.73rem;font-weight:700;letter-spacing:.3px}
+@media(min-width:701px){ .hdr .htxt{border-left:1px solid var(--bd);padding-left:14px} }
+
+/* ───────── หน้าแรก — แถบสรุป ───────── */
+.dash{margin-bottom:4px}
+.dash-head{position:relative;overflow:hidden;border-radius:var(--rl);padding:20px 24px;color:#fff;
+  display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;
+  background:linear-gradient(135deg,var(--fa) 0%,var(--fb) 78%);
+  box-shadow:0 14px 32px -18px rgba(19,122,57,.9)}
+.dash-head::after{content:"";position:absolute;right:-70px;top:-110px;width:290px;height:290px;border-radius:50%;
+  background:radial-gradient(circle at 32% 32%,rgba(255,255,255,.22),rgba(255,255,255,0) 70%);pointer-events:none}
+.dh-txt{min-width:0;position:relative;z-index:1}
+.dh-eyebrow{font-size:.68rem;font-weight:700;letter-spacing:.9px;color:rgba(255,255,255,.76)}
+.dash-head h1{margin:6px 0 5px;font-size:1.42rem;font-weight:800;letter-spacing:.2px;line-height:1.3}
+.dash-head p{margin:0;font-size:.87rem;color:rgba(255,255,255,.9)}
+.dh-date{position:relative;z-index:1;flex:none;text-align:right;padding:10px 16px;border-radius:14px;
+  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.24)}
+.dh-date span{display:block;font-size:.71rem;font-weight:600;color:rgba(255,255,255,.82)}
+.dh-date b{font-size:1.02rem;font-weight:700}
+
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));margin-top:13px}
+.kpi{display:flex;align-items:center;gap:12px;padding:13px 15px;background:var(--card);
+  border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh-sm);text-align:left;
+  font-family:inherit;color:inherit;width:100%}
+.kpi .k-ic{width:40px;height:40px;flex:none;border-radius:12px;display:grid;place-items:center;font-size:19px;
   background:linear-gradient(135deg,var(--ac),#dff3e6);color:var(--pd)}
-.card h3{margin:0 0 4px;font-size:1rem;font-weight:700;line-height:1.35}
-.card .code{font-size:.74rem;color:var(--mu);font-weight:600}
-.card .cnt2{font-size:.76rem;color:var(--pd);font-weight:800;margin-top:6px}
-.sect-title{margin:22px 4px 9px;font-size:.72rem;color:var(--mu);font-weight:800;
-  text-transform:uppercase;letter-spacing:.6px}
+.kpi b{display:block;font-size:1.3rem;font-weight:800;line-height:1.2}
+.kpi .k-lab{display:block;font-size:.74rem;font-weight:700;color:var(--mu)}
+.kpi .k-sub{display:block;font-size:.71rem;font-weight:700;color:var(--pd);margin-top:2px}
+.kpi.warn{border-color:#fbd8a6;background:linear-gradient(135deg,#fffaf2,#fff);cursor:pointer}
+.kpi.warn .k-ic{background:linear-gradient(135deg,#ffe8ce,#ffd7a8);color:#9a4a06}
+.kpi.warn .k-sub{color:var(--s)}
+.kpi.warn:hover{box-shadow:var(--sh-md);transform:translateY(-1px)}
+
+/* ───────── หน้าแรก — หัวข้อกลุ่ม + การ์ดแบบฟอร์ม ───────── */
+.sect-head{display:flex;align-items:center;gap:12px;margin:26px 2px 12px}
+.sect-head .t{flex:none;font-size:.74rem;font-weight:800;color:var(--mu);letter-spacing:.7px}
+.sect-head .ln{flex:1;height:1px;background:linear-gradient(90deg,var(--bd),rgba(230,236,242,0))}
+.sect-head .r{flex:none;font-size:.72rem;font-weight:700;color:var(--mu2)}
+
+.fgrid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(274px,1fr))}
+.fcard{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:9px;width:100%;text-align:left;
+  padding:15px 16px 13px;background:var(--card);border:1px solid var(--bd);border-radius:var(--r);
+  box-shadow:var(--sh-sm);cursor:pointer;font-family:inherit;color:inherit;
+  transition:box-shadow .25s,transform .2s,border-color .2s}
+.fcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;opacity:0;transition:opacity .2s;
+  background:linear-gradient(180deg,var(--fa2),var(--fb))}
+.fcard:hover{box-shadow:var(--sh-md);transform:translateY(-2px);border-color:#cfe8d8}
+.fcard:hover::before{opacity:1}
+.fc-top{display:flex;align-items:center;gap:10px}
+.fc-top .ico{width:42px;height:42px;flex:none;border-radius:12px;display:grid;place-items:center;font-size:21px;
+  background:linear-gradient(135deg,var(--ac),#dff3e6);color:var(--pd)}
+.fc-code{margin-left:auto;white-space:nowrap;font-size:.67rem;font-weight:800;letter-spacing:.4px;color:var(--mu);
+  background:var(--bg2);border:1px solid var(--bd);border-radius:999px;padding:4px 10px}
+.fcard h3{margin:0;font-size:.98rem;font-weight:700;line-height:1.42;min-height:2.84em;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fc-meta{font-size:.75rem;font-weight:600;color:var(--mu)}
+.fc-foot{margin-top:auto;padding-top:10px;border-top:1px dashed var(--bd);
+  display:flex;align-items:center;gap:8px}
+.fc-n{font-size:1.05rem;font-weight:800;color:var(--pd);line-height:1}
+.fc-n small{margin-left:3px;font-size:.71rem;font-weight:700;color:var(--mu)}
+.fc-new{font-size:.69rem;font-weight:800;color:var(--t-gT);background:var(--t-g);border-radius:999px;padding:3px 9px}
+.fcard .go{margin-left:auto;font-size:1.25rem;line-height:1;color:var(--mu2);transition:.2s}
+.fcard:hover .go{color:var(--pd);transform:translateX(3px)}
+
+/* ───────── หน้าแรก — การ์ดข้อมูลหลัก ───────── */
+.mgrid{display:grid;gap:13px;grid-template-columns:repeat(auto-fit,minmax(310px,1fr))}
+.mcard{display:flex;align-items:center;gap:13px;width:100%;text-align:left;padding:14px 16px;
+  background:linear-gradient(180deg,#fff,var(--bg3));border:1px solid var(--bd);border-radius:var(--r);
+  box-shadow:var(--sh-sm);cursor:pointer;font-family:inherit;color:inherit;
+  transition:box-shadow .25s,transform .2s,border-color .2s}
+.mcard:hover{box-shadow:var(--sh-md);transform:translateY(-2px);border-color:#cfe8d8}
+.mcard .ico{width:42px;height:42px;flex:none;border-radius:12px;display:grid;place-items:center;font-size:21px;
+  background:linear-gradient(135deg,var(--ac),#dff3e6);color:var(--pd)}
+.mcard .mtx{flex:1;min-width:0}
+.mcard h3{margin:0 0 2px;font-size:.96rem;font-weight:700;line-height:1.35}
+.mcard .code{font-size:.72rem;font-weight:600;color:var(--mu)}
+.mcard .mmeta{margin-top:4px;font-size:.73rem;font-weight:600;color:var(--pd)}
+.mcard .cnt3{flex:none;text-align:right}
+.mcard .cnt3 b{display:block;font-size:1.12rem;font-weight:800;color:var(--pd);line-height:1.2}
+.mcard .cnt3 span{display:block;font-size:.7rem;font-weight:700;color:var(--mu);white-space:nowrap}
 
 /* ───────── Buttons ───────── */
 .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:13px;align-items:center}
@@ -313,11 +387,18 @@ label.f > span{display:block;font-size:.76rem;font-weight:700;color:var(--mu);ma
   input[type=checkbox]{width:21px;height:21px;accent-color:var(--p)}
   /* iOS จะซูมหน้าจอเองถ้าตัวอักษรในช่องกรอกเล็กกว่า 16px */
   select,input[type=text],input[type=date],input[type=time],input[type=number],textarea{font-size:16px}
-  .card:hover,.btn:hover{transform:none}
+  .fcard:hover,.mcard:hover,.kpi.warn:hover,.btn:hover{transform:none}
   tbody tr:hover{background:transparent}
 }
 a.tel{color:var(--pd);font-weight:700;text-decoration:none;border-bottom:1px dotted var(--pd)}
 .mu{color:var(--mu2)}
+
+/* ── หนึ่งแถว = หนึ่งคัน · ในแถวมีได้หลายคน ── */
+.plines>.pl+.pl{margin-top:5px;padding-top:5px;border-top:1px dashed var(--bd)}
+.sm2{font-size:.76rem}
+button.lname{background:none;border:0;padding:0;font:inherit;color:inherit;font-weight:700;
+  cursor:pointer;text-align:left}
+button.lname:hover{color:var(--pd);text-decoration:underline}
 
 /* ── ตารางแบบการ์ด (โทรศัพท์) — ไม่ต้องเลื่อนซ้ายขวาอีกต่อไป ── */
 @media(max-width:700px){
@@ -327,6 +408,7 @@ a.tel{color:var(--pd);font-weight:700;text-decoration:none;border-bottom:1px dot
   .tablewrap.cardify tr{position:relative;background:var(--card);border:1px solid var(--bd);
     border-radius:var(--r);margin-bottom:10px;padding:11px 13px 11px;box-shadow:var(--sh-sm)}
   .tablewrap.cardify tr.rowlink:active{background:var(--ac)}
+  .tablewrap.cardify .plines{flex:1;min-width:0}
   .tablewrap.cardify td{border:0;padding:3px 0;white-space:normal;min-width:0!important;
     display:flex;gap:10px;align-items:baseline;font-size:.93rem}
   .tablewrap.cardify td::before{content:attr(data-label);flex:0 0 92px;color:var(--mu);
@@ -354,7 +436,9 @@ a.tel{color:var(--pd);font-weight:700;text-decoration:none;border-bottom:1px dot
   .nav .ic{font-size:1rem}
   .nav .n{font-size:.66rem;padding:1px 6px}
   .navsec{margin:11px 12px 4px}
-  .grid{grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:11px}
+  .fgrid{grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:11px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .mgrid{grid-template-columns:1fr;gap:11px}
   .fields{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
   .hdr h1{font-size:1rem}
 }
@@ -387,10 +471,24 @@ a.tel{color:var(--pd);font-weight:700;text-decoration:none;border-bottom:1px dot
   .iconbtn{padding:7px 10px;font-size:.82rem}
 
   /* เนื้อหา */
-  .hero{padding:15px 16px;border-radius:var(--r)}
-  .hero h1{font-size:1.15rem}
-  .hero p{font-size:.84rem}
-  .grid{gap:10px;grid-template-columns:1fr}
+  .dash-head{padding:16px 17px;border-radius:var(--r);gap:12px}
+  .dash-head h1{font-size:1.16rem}
+  .dash-head p{font-size:.83rem}
+  .dh-date{padding:8px 13px;text-align:left}
+  .dh-date b{font-size:.94rem}
+  .kpis{grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+  .kpi{padding:11px;gap:9px}
+  .kpi .k-ic{width:34px;height:34px;font-size:16px;border-radius:10px}
+  .kpi b{font-size:1.1rem}
+  .kpi .k-lab{font-size:.69rem}
+  .kpi .k-sub{font-size:.66rem}
+  .sect-head{margin:20px 2px 10px}
+  .fgrid,.mgrid{gap:10px;grid-template-columns:1fr}
+  .fcard h3{min-height:0}
+  .sidebar{flex-direction:row}
+  .side-foot{display:none}
+  .nav{align-items:center}
+  .nav .tx{white-space:nowrap;text-overflow:ellipsis}
   .fields{gap:11px;grid-template-columns:1fr}
   .panel .body{padding:13px}
   .panel > h2{padding:11px 13px;font-size:.76rem}
@@ -1318,13 +1416,14 @@ function renderNav(){
   });
   h += '<div class="navsec">ข้อมูลหลัก</div>'
      + '<button class="nav ' + active("master","contractors") + '" data-go="master" data-fid="contractors">'
-     + '<span class="ic">🚛</span><span class="tx">ผู้รับเหมา (AVL)</span><span class="n">' + MASTER.contractors.length + '</span></button>'
+     + '<span class="ic">🚛</span><span class="tx">ผู้รับเหมา (AVL)</span><span class="n">' + conCount("") + '</span></button>'
      + '<button class="nav ' + active("master","employees") + '" data-go="master" data-fid="employees">'
      + '<span class="ic">👷</span><span class="tx">พนักงาน</span><span class="n">' + MASTER.employees.length + '</span></button>'
      + '<div class="navsec">ทั่วไป</div>'
      + '<button class="nav ' + active("home") + '" data-go="home"><span class="ic">🏠</span><span class="tx">หน้าแรก</span></button>'
      + '<button class="nav ' + active("install") + '" data-go="install"><span class="ic">📲</span><span class="tx">ติดตั้งเป็นแอป</span></button>'
      + '<button class="nav ' + active("settings") + '" data-go="settings"><span class="ic">⚙️</span><span class="tx">ตั้งค่า / สำรองข้อมูล</span></button>';
+  h += '<div class="side-foot"><b>INTER GROUP PACKAGING</b>แผนกคลังสินค้าและจัดส่ง<br>ระบบตรวจสอบแบบไร้กระดาษ</div>';
   sb.innerHTML = h;
   sb.querySelectorAll(".nav").forEach(b=> b.onclick = ()=>{
     const g = b.dataset.go;
@@ -1337,36 +1436,107 @@ function renderNav(){
 /* ============================================================
    VIEW: HOME
    ============================================================ */
+const THDOW = ["วันอาทิตย์","วันจันทร์","วันอังคาร","วันพุธ","วันพฤหัสบดี","วันศุกร์","วันเสาร์"];
+/* สรุปของแต่ละฟอร์ม — เดินผ่านรายการครั้งเดียว ไม่ต้องเรียงใหม่ทั้งกอง */
+function formStat(fid){
+  const t = todayISO();
+  let latest = "", today = 0;
+  const scan = arr =>{
+    for(let i=0;i<arr.length;i++){
+      const d = arr[i].date || "";
+      if(d > latest) latest = d;
+      if(d === t) today++;
+    }
+  };
+  const h = histRecs(fid), n = recs(fid);
+  scan(h); scan(n);
+  return {total:h.length + n.length, neu:n.length, today, latest};
+}
+function sectHead(title, right){
+  return el("div","sect-head",
+    `<span class="t">${esc(title)}</span><span class="ln"></span>` +
+    (right ? `<span class="r">${esc(right)}</span>` : ""));
+}
+
 function viewHome(app){
   setTitle("WT Paperless","ระบบตรวจสอบ คลังสินค้าและจัดส่ง");
-  const hero = el("div","hero",
-    `<h1>ระบบตรวจสอบแบบไร้กระดาษ</h1>
-     <p>แผนกคลังสินค้าและจัดส่ง — เลือกแบบฟอร์มที่ต้องการบันทึก</p>`);
-  app.appendChild(hero);
 
-  app.appendChild(el("div","sect-title","แบบฟอร์มตรวจสอบ"));
-  const g = el("div","grid");
+  const stats = {};
+  FORM_ORDER.forEach(fid=> stats[fid] = formStat(fid));
+  const sum = k => FORM_ORDER.reduce((a,fid)=> a + stats[fid][k], 0);
+  const totalAll = sum("total"), totalNew = sum("neu"), todayN = sum("today");
+  const pend = (DB.pending||[]).length;
+
+  /* ---- แถบหัวเรื่อง + วันที่วันนี้ ---- */
+  const dash = el("section","dash");
+  dash.appendChild(el("div","dash-head",
+    `<div class="dh-txt">
+       <div class="dh-eyebrow">INTER GROUP PACKAGING · แผนกคลังสินค้าและจัดส่ง</div>
+       <h1>ระบบตรวจสอบแบบไร้กระดาษ</h1>
+       <p>เลือกแบบฟอร์มที่ต้องการบันทึก หรือเปิดดูข้อมูลย้อนหลัง</p>
+     </div>
+     <div class="dh-date"><span>${THDOW[new Date().getDay()]}</span><b>${thLong(todayISO())}</b></div>`));
+
+  /* ---- ตัวเลขสรุป ---- */
+  const kpis = el("div","kpis");
+  const kpi = (ic, val, lab, sub, cls)=> el("div","kpi"+(cls?" "+cls:""),
+    `<span class="k-ic">${ic}</span>
+     <div style="min-width:0">
+       <b>${val}</b><span class="k-lab">${esc(lab)}</span>
+       ${sub ? `<span class="k-sub">${esc(sub)}</span>` : ""}
+     </div>`);
+  kpis.appendChild(kpi("📄", totalAll.toLocaleString("th-TH"), "รายการทั้งหมด",
+                       "จาก " + FORM_ORDER.length + " แบบฟอร์ม"));
+  kpis.appendChild(kpi("✍️", totalNew.toLocaleString("th-TH"), "บันทึกจากแอปนี้",
+                       todayN ? "วันนี้ " + todayN.toLocaleString("th-TH") + " รายการ" : ""));
+  kpis.appendChild(kpi("🚛", conCount("").toLocaleString("th-TH"), "ผู้รับเหมาที่ใช้งาน",
+                       "กล่อง " + conCount("BOX") + " · แผ่น " + conCount("SHEET")));
+  if(pend){
+    const k = kpi("📤", pend.toLocaleString("th-TH"), "รอส่งเข้า Excel", "แตะเพื่อส่งเดี๋ยวนี้", "warn");
+    k.onclick = ()=> flushPending(false);
+    kpis.appendChild(k);
+  } else {
+    kpis.appendChild(kpi("👷", MASTER.employees.length.toLocaleString("th-TH"), "พนักงานในระบบ"));
+  }
+  dash.appendChild(kpis);
+  app.appendChild(dash);
+
+  /* ---- การ์ดแบบฟอร์ม ---- */
+  app.appendChild(sectHead("แบบฟอร์มตรวจสอบ", FORM_ORDER.length + " แบบฟอร์ม"));
+  const g = el("div","fgrid");
   FORM_ORDER.forEach(fid=>{
-    const f = FORMS[fid], nNew = recs(fid).length, nOld = histRecs(fid).length;
-    const c = el("button","card",
-      `<div class="ico">${f.icon}</div>
-       <div style="min-width:0">
-         <h3>${esc(f.title)}</h3>
-         <div class="code">${f.code} ${f.rev}</div>
-         <div class="cnt2">${(nOld+nNew).toLocaleString("th-TH")} รายการ${nNew? ` <span style="color:var(--ok)">(ใหม่ ${nNew})</span>`:""}</div>
+    const f = FORMS[fid], s = stats[fid];
+    const last = !s.latest ? "ยังไม่มีข้อมูล"
+      : "ล่าสุด " + (f.monthly ? thMonth(s.latest.slice(0,7)) : thDate(s.latest));
+    const c = el("button","fcard",
+      `<div class="fc-top">
+         <span class="ico">${f.icon}</span>
+         <span class="fc-code">${esc(f.code)} ${esc(f.rev)}</span>
+       </div>
+       <h3>${esc(f.title)}</h3>
+       <div class="fc-meta">${esc(last)}</div>
+       <div class="fc-foot">
+         <span class="fc-n">${s.total.toLocaleString("th-TH")}<small>รายการ</small></span>
+         ${s.neu ? `<span class="fc-new">ใหม่ ${s.neu.toLocaleString("th-TH")}</span>` : ""}
+         <span class="go">›</span>
        </div>`);
     c.onclick = ()=> go("list",{fid, filter:{}, sel:new Set()});
     g.appendChild(c);
   });
   app.appendChild(g);
 
-  app.appendChild(el("div","sect-title","ข้อมูลหลัก"));
-  const g2 = el("div","grid");
-  [["contractors","🚛","รายละเอียดผู้รับเหมาในการบริการขนส่ง (AVL)","FM-QMR-020 Rev.00", MASTER.contractors.length+" ราย"],
-   ["employees","👷","พนักงานคลังสินค้าและจัดส่ง","รายชื่อพนักงาน", MASTER.employees.length+" คน"]].forEach(([k,ic,t,code,cnt])=>{
-    const c = el("button","card",
-      `<div class="ico">${ic}</div><div style="min-width:0"><h3>${esc(t)}</h3>
-       <div class="code">${esc(code)}</div><div class="cnt2">${cnt}</div></div>`);
+  /* ---- ข้อมูลหลัก ---- */
+  app.appendChild(sectHead("ข้อมูลหลัก", "แก้ไขได้ในแอป"));
+  const g2 = el("div","mgrid");
+  [["contractors","🚛","รายละเอียดผู้รับเหมาในการบริการขนส่ง (AVL)","FM-QMR-020 Rev.00",
+    conCount(""), "ราย", "กล่อง " + conCount("BOX") + " · แผ่น " + conCount("SHEET") + " ราย"],
+   ["employees","👷","พนักงานคลังสินค้าและจัดส่ง","รายชื่อพนักงานของแผนก",
+    MASTER.employees.length, "คน", "ผู้จัดการ · หัวหน้าส่วน · พนักงานจัดส่งและคลัง"]].forEach(([k,ic,t,code,n,unit,meta])=>{
+    const c = el("button","mcard",
+      `<span class="ico">${ic}</span>
+       <div class="mtx"><h3>${esc(t)}</h3><div class="code">${esc(code)}</div>
+         <div class="mmeta">${esc(meta)}</div></div>
+       <div class="cnt3"><b>${n.toLocaleString("th-TH")}</b><span>${esc(unit)}</span></div>`);
     c.onclick = ()=> go("master",{fid:k});
     g2.appendChild(c);
   });
@@ -1641,8 +1811,14 @@ function fieldNode(fd, rec, onChange){
   }
   else if(fd.type==="contractor"){
     input = el("select");
-    input.innerHTML = `<option value="">— เลือกผู้รับเหมา —</option>` + MASTER.contractors
-      .map(c=>`<option value="${esc(c.code)}" ${String(rec[fd.k])===String(c.code)?"selected":""}>${esc(c.code)} — ${esc(c.name)} (${esc(c.plate)})</option>`).join("");
+    const cur = String(rec[fd.k]||"");
+    const duo = conDuo(MASTER.contractors);
+    const opt = c=>{ const d = duo[c.code] || {n:1,i:1};
+      return `<option value="${esc(c.code)}" ${cur===String(c.code)?"selected":""}>${esc(c.code)} — ${esc(c.name)} (${esc(c.plate)})${d.n>1?" · คนที่ "+d.i+" จาก "+d.n:""}${c.off?" · ออกแล้ว":""}</option>`; };
+    const pick = t=> conSorted(MASTER.contractors).filter(c=> c.type===t && (!c.off || cur===String(c.code)));
+    input.innerHTML = `<option value="">— เลือกผู้รับเหมา —</option>`
+      + `<optgroup label="กล่อง (BOX)">` + pick("BOX").map(opt).join("") + `</optgroup>`
+      + `<optgroup label="แผ่น (SHEET)">` + pick("SHEET").map(opt).join("") + `</optgroup>`;
     input.onchange = ()=>{
       const c = MASTER.contractors.find(x=>String(x.code)===input.value);
       rec[fd.k] = input.value;
@@ -2504,7 +2680,7 @@ function applyMasterOverride(){
 function refreshMasterDerived(){
   /* ทะเบียนรถ = ที่เคยตรวจ + ของผู้รับเหมา */
   const set = new Set(MASTER.plates || []);
-  (MASTER.contractors||[]).forEach(c=>{ if(c.plate) set.add(String(c.plate).trim()); });
+  (MASTER.contractors||[]).forEach(c=>{ if(c.plate && !c.off) set.add(String(c.plate).trim()); });
   MASTER.plates = [...set].filter(Boolean).sort();
   PLATE_TYPE = null;                       /* ให้คำนวณใหม่ */
   ["plates","employees","inspectors"].forEach(k=>{
@@ -2859,20 +3035,61 @@ function viewMaster(app){
   addBtn.onclick = ()=> go("masteredit",{fid:kind, id:null});
   tb.append(q, el("div","spacer"), addBtn);
   app.appendChild(tb);
-  app.appendChild(el("div","count-note","แตะที่แถวเพื่อแก้ไขข้อมูล · ข้อมูลจะถูกบันทึกลงไฟล์ Excel ให้อัตโนมัติ"));
+  app.appendChild(el("div","count-note", (isCon ? "แตะที่ชื่อเพื่อแก้ไขข้อมูล" : "แตะที่แถวเพื่อแก้ไขข้อมูล")
+    + " · ข้อมูลจะถูกบันทึกลงไฟล์ Excel ให้อัตโนมัติ"));
+
+  let chips = null, sum = null;
+  if(isCon){
+    if(state.mtype===undefined) state.mtype = "";
+    chips = el("div","chips");
+    [["","ทั้งหมด"],["BOX","🧊 กล่อง"],["SHEET","📄 แผ่น"],["OFF","ออกแล้ว"]].forEach(([v,lb])=>{
+      const c = el("button","chip", esc(lb) + " (" + conCount(v) + ")");
+      c.dataset.v = v;
+      c.onclick = ()=>{ state.mtype = v; draw(); };
+      chips.appendChild(c);
+    });
+    app.appendChild(chips);
+    sum = el("div","count-note"); app.appendChild(sum);
+  }
 
   const wrap = el("div","tablewrap cardify");
   app.appendChild(wrap);
   const draw = ()=>{
     const s2 = q.value.trim().toLowerCase();
     if(isCon){
-      const list = MASTER.contractors.filter(c=> !s2 ||
-        (String(c.code)+c.name+c.plate+(c.contact||"")+(c.tel1||"")).toLowerCase().includes(s2));
-      wrap.innerHTML = `<table><thead><tr><th>รหัส</th><th>ชื่อผู้รับเหมา</th><th>ทะเบียนรถ</th><th>ผู้ติดต่อ</th><th>โทรศัพท์</th><th>ประเภท</th><th>ที่อยู่</th><th></th></tr></thead><tbody>`
-        + list.map(c=> `<tr class="rowlink" data-code="${esc(c.code)}"><td data-label="รหัส">${esc(c.code)}</td><td class="pri">${esc(c.name)}</td>
-            <td data-label="ทะเบียนรถ">${esc(c.plate)}</td><td data-label="ผู้ติดต่อ">${esc(c.contact||"")}</td><td data-label="โทรศัพท์">${esc(c.tel1||"")}${c.tel2?" / "+esc(c.tel2):""}</td>
-            <td data-label="ประเภท">${esc(c.type||"")}</td><td data-label="ที่อยู่" style="white-space:normal;min-width:240px">${esc(c.addr||"")}</td>
-            <td class="acts"><div class="rowacts"><button class="btn sm" data-edit="${esc(c.code)}">แก้ไข</button></div></td></tr>`).join("")
+      const t = state.mtype || "";
+      if(chips) chips.querySelectorAll(".chip").forEach(c=> c.classList.toggle("on", c.dataset.v===t));
+      const list = conSorted(MASTER.contractors).filter(c=>
+        (t==="OFF" ? !!c.off : (!c.off && (!t || c.type===t))) &&
+        (!s2 || (String(c.code)+c.name+c.plate+(c.contact||"")+(c.tel1||"")).toLowerCase().includes(s2)));
+      /* จับคนที่ใช้รถคันเดียวกันมาไว้แถวเดียวกัน — หนึ่งแถว = หนึ่งคัน */
+      const trucks = [], seen = {};
+      list.forEach(c=>{
+        const p = String(c.plate||"").replace(/[s-]/g,"").toLowerCase();
+        const k = p ? (c.type||"") + "|" + p : "เดี่ยว|" + c.code;
+        if(seen[k] === undefined){ seen[k] = trucks.length; trucks.push({plate:c.plate, type:c.type, men:[]}); }
+        trucks[seen[k]].men.push(c);
+      });
+      /* ช่องไหนมีข้อมูลของคนเดียว ก็แสดงบรรทัดเดียว ไม่ต้องมีขีดว่างให้รก */
+      const lines = (men, fn)=>{
+        const vals = men.map(c=> fn(c) || ""), nz = vals.filter(v=> v);
+        const show = nz.length <= 1 ? [nz[0] || ""] : vals;
+        return `<div class="plines">`
+          + show.map(v=> `<div class="pl">${v || '<span class="mu">—</span>'}</div>`).join("") + `</div>`;
+      };
+      if(sum){
+        const pair = trucks.filter(x=> x.men.length > 1).length;
+        sum.textContent = trucks.length + " คัน · " + list.length + " คน"
+          + (pair ? "  —  รถที่มีสองคน " + pair + " คัน" : "");
+      }
+      wrap.innerHTML = `<table><thead><tr><th style="width:52px">ลำดับ</th><th>ทะเบียนรถ</th><th>รายชื่อ</th><th>ผู้ติดต่อ</th><th>โทรศัพท์</th><th>ประเภท</th><th>ที่อยู่</th></tr></thead><tbody>`
+        + trucks.map((tk,i)=> `<tr><td data-label="ลำดับ">${i+1}</td>
+            <td data-label="ทะเบียนรถ"><b>${esc(tk.plate||"—")}</b>${tk.men.length>1?'<div class="mu sm2">'+tk.men.length+' คนต่อคัน</div>':""}</td>
+            <td class="pri">${lines(tk.men, c=> `<button class="lname" data-edit="${esc(c.code)}">${esc(c.name)}</button> <span class="mu sm2">รหัส ${esc(c.code)}</span>${c.off?' <span class="pill ng">ออกแล้ว</span>':""}`)}</td>
+            <td data-label="ผู้ติดต่อ">${lines(tk.men, c=> esc(c.contact||""))}</td>
+            <td data-label="โทรศัพท์">${lines(tk.men, c=> c.tel1 ? `<a class="tel" href="tel:${esc(String(c.tel1).replace(/[^0-9+]/g,""))}">${esc(c.tel1)}</a>${c.tel2?" / "+esc(c.tel2):""}` : "")}</td>
+            <td data-label="ประเภท">${esc(CON_TYPE_TH[tk.type]||tk.type||"")}</td>
+            <td data-label="ที่อยู่" style="white-space:normal;min-width:240px">${lines(tk.men, c=> esc(c.addr||""))}</td></tr>`).join("")
         + `</tbody></table>`;
       if(!list.length) wrap.innerHTML = '<div class="empty">ไม่พบผู้รับเหมาตามคำค้น</div>';
     } else {
@@ -2908,7 +3125,7 @@ function viewMasterEdit(app){
   if(isCon){
     const found = MASTER.contractors.find(c=> String(c.code)===String(state.id));
     rec = found ? JSON.parse(JSON.stringify(found))
-                : {code:nextContractorCode(), name:"", addr:"", contact:"", plate:"", tel1:"", tel2:"", type:"BOX"};
+                : {code:nextContractorCode(), name:"", addr:"", contact:"", plate:"", tel1:"", tel2:"", type:"BOX", ord:0};
   } else {
     rec = isNew ? {name:"", nick:"", pos:"พนักงานคลังสินค้า", tel:""} : normEmp(empOf(state.id) || state.id);
   }
@@ -2952,6 +3169,16 @@ function viewMasterEdit(app){
     mk("โทรศัพท์ 1", "tel1");
     mk("โทรศัพท์ 2", "tel2");
     b.appendChild(flds);
+    const stW = el("label","f","<span>สถานะ</span>");
+    const st = el("select");
+    st.innerHTML = `<option value="">ยังทำงานอยู่</option><option value="1" ${rec.off?"selected":""}>ออกแล้ว (ไม่ต้องแสดงในฟอร์ม)</option>`;
+    st.onchange = ()=>{ if(st.value) rec.off = 1; else delete rec.off; };
+    stW.appendChild(st); flds.appendChild(stW);
+    const hpW = el("label","f","<span>ลำดับในผังรายชื่อ</span>");
+    const hp = el("input"); hp.type="text"; hp.value = rec.ord||"";
+    hp.oninput = ()=>{ rec.ord = Number(hp.value)||0; };
+    hpW.appendChild(hp); hpW.appendChild(el("div","hint","ใช้เรียงลำดับให้ตรงกับผังรายชื่อผู้รับเหมา"));
+    flds.appendChild(hpW);
     const addrW = el("label","f","<span>ที่อยู่</span>");
     const addr = el("textarea"); addr.value = rec.addr||"";
     addr.oninput = ()=>{ rec.addr = addr.value; };
@@ -3008,6 +3235,30 @@ function viewMasterEdit(app){
   bar.appendChild(okBtn);
   app.appendChild(bar);
 }
+/* ผู้รับเหมา: เรียงตามประเภท (กล่อง → แผ่น) แล้วตามลำดับในผังรายชื่อ */
+const CON_TYPE_TH = {BOX:"กล่อง", SHEET:"แผ่น"};
+function conSorted(list){
+  const rank = t=> t==="BOX" ? 0 : t==="SHEET" ? 1 : 2;
+  return (list||[]).slice().sort((a,b)=>
+    (a.off?1:0)-(b.off?1:0) || rank(a.type)-rank(b.type)
+    || (Number(a.ord)||999)-(Number(b.ord)||999)
+    || (Number(a.code)||0)-(Number(b.code)||0));
+}
+/* รถหนึ่งคันอาจมีสองคน — คืน map รหัส -> {n:คนทั้งหมดของคันนี้, i:คนที่เท่าไร} */
+function conDuo(list){
+  const g = {}, out = {};
+  (list||[]).filter(c=> !c.off).forEach(c=>{
+    const p = String(c.plate||"").replace(/[s-]/g,"").toLowerCase();
+    const k = p ? (c.type||"") + "|" + p : "เดี่ยว|" + c.code;      /* ไม่มีทะเบียน = นับเป็นคันของตัวเอง */
+    (g[k] = g[k] || []).push(c);
+  });
+  Object.keys(g).forEach(k=>{
+    const v = g[k].sort((a,b)=> (a.helper?1:0)-(b.helper?1:0) || (Number(a.ord)||999)-(Number(b.ord)||999));
+    v.forEach((c,i)=> out[c.code] = {n:v.length, i:i+1});
+  });
+  return out;
+}
+function conCount(t){ return (MASTER.contractors||[]).filter(c=> t==="OFF" ? c.off : (!c.off && (!t || c.type===t))).length; }
 function nextContractorCode(){
   const nums = MASTER.contractors.map(c=> Number(c.code)).filter(v=> !isNaN(v));
   return String(nums.length ? Math.max(...nums)+1 : 1);

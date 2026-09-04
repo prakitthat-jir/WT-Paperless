@@ -4,6 +4,9 @@ const fs = require("fs"), path = require("path");
 
 const OFFICE = "C:/Users/dissheet06/inter-group.co.th/PT IFC Rev.01 - PT 04.03.00 WT Paperless App ห้ามลบเด็ดขาด!!!";
 const REPO   = process.env.WT_REPO || "C:/Users/dissheet06/wt-paperless";
+/* ไฟล์แอปย้ายไปอยู่ในโฟลเดอร์ย่อย Project-Webapp — หาให้เจอทั้งสองแบบ */
+const SRC = fs.existsSync(path.join(OFFICE, "Project-Webapp", "WT-Paperless-WebApp.html"))
+          ? path.join(OFFICE, "Project-Webapp") : OFFICE;
 
 /* ไฟล์โค้ดที่นำขึ้น GitHub ได้ (ไม่มีข้อมูลส่วนบุคคล) */
 const COPY = [
@@ -20,7 +23,7 @@ const ICONS = "WT-Paperless-Icons";
    ยามเฝ้าประตู — ห้ามไฟล์ที่มีข้อมูลส่วนบุคคลหลุดขึ้น GitHub
    ───────────────────────────────────────────────────────────── */
 function personalProbes(){
-  const p = path.join(OFFICE, "WT-Paperless-Base.json");
+  const p = path.join(SRC, "WT-Paperless-Base.json");
   if(!fs.existsSync(p)) return [];
   const b = JSON.parse(fs.readFileSync(p, "utf8"));
   const out = [];
@@ -65,7 +68,7 @@ function cp(from, to){
 fs.mkdirSync(REPO, {recursive:true});
 let copied = 0;
 COPY.forEach(([src, dst])=>{
-  const from = path.join(OFFICE, src);
+  const from = path.join(SRC, src);
   if(!fs.existsSync(from)){ console.log("  ! ไม่พบ " + src); return; }
   cp(from, path.join(REPO, dst));
   copied++;

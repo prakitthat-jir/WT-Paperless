@@ -4,7 +4,7 @@
    หมายเหตุ: เบราว์เซอร์จะลงทะเบียนไฟล์นี้เฉพาะเมื่อเปิดผ่าน
              https:// หรือ http://localhost เท่านั้น
    ============================================================ */
-const VERSION = "wt-paperless-v2";
+const VERSION = "wt-paperless-v4";
 const SHELL = [
   "./",
   "./index.html",                    /* ชื่อไฟล์บน GitHub Pages */

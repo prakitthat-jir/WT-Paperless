@@ -282,6 +282,12 @@ label.f > span{display:block;font-size:.76rem;font-weight:700;color:var(--mu);ma
 .sigscale .val{font-size:.8rem;font-weight:700;color:var(--pd);white-space:nowrap;min-width:118px}
 .hint{font-size:.82rem;color:var(--mu);margin-top:8px;line-height:1.55}
 .count-note{font-size:.82rem;color:var(--mu);margin:2px 0 11px}
+.filterbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 9px;
+  padding:9px 13px;border:1px solid var(--bd);border-radius:var(--rs);background:var(--bg3);font-size:.85rem;color:var(--tx2)}
+.filterbar .fb-txt b{color:var(--pd);font-weight:800}
+.filterbar .fb-sel{margin-left:auto;font-weight:700;color:var(--pd);background:var(--ac);
+  border-radius:999px;padding:3px 11px}
+.filterbar .btn.sm{padding:5px 11px}
 
 /* ───────── ตารางตรวจรายเดือน (โฟล์คลิฟท์ FM-TB-011) ───────── */
 .daystrip{display:flex;flex-wrap:wrap;gap:6px;margin:11px 0 3px}
@@ -502,6 +508,7 @@ button.lname:hover{color:var(--pd);text-decoration:underline}
   .toolbar .btn{justify-content:center;width:100%;padding:9px 10px;font-size:.82rem}
   .toolbar .tb-foldbtn{display:inline-flex;grid-column:1 / -1;order:-1}
   .toolbar .tb-foldbtn.on{border-color:var(--p);background:var(--ac);color:var(--pd)}
+  .toolbar .tb-foldbtn.hasf::after{content:"●";color:var(--s);margin-left:7px;font-size:.7em;vertical-align:middle}
   .toolbar .tb-fold{display:none}
   .toolbar .tb-fold.open{display:grid;grid-column:1 / -1;order:-1;
     grid-template-columns:1fr 1fr;gap:7px;padding:9px;border:1px solid var(--bd);
@@ -871,7 +878,9 @@ const FORMS = {
       {k:"contractorCode", label:"รหัสผู้รับเหมา", type:"contractor", req:1},
       {k:"contractor", label:"ชื่อผู้รับเหมา", type:"text", req:1},
       {k:"truckType", label:"ประเภทรถขนส่ง", type:"select", opts:["รถบรรทุก 6 ล้อ","รถกะบะ"], req:1,
-       hint:"เติมให้เองจากทะเบียนรถ — ทะเบียนมีพยัญชนะไทย = รถกะบะ, เลขล้วน = รถบรรทุก 6 ล้อ (แก้ทับได้)"},
+       hint:r=> r && r.plate
+         ? "จากทะเบียน " + r.plate + " → " + (truckTypeOf(r.plate) || "ไม่ทราบ") + " (แก้ทับได้)"
+         : "เติมให้เองเมื่อเลือกผู้รับเหมา — ทะเบียนมีพยัญชนะไทย = รถกะบะ, เลขล้วน = รถบรรทุก 6 ล้อ"},
       {k:"delivery", label:"ประเภทการจัดส่ง", type:"select", opts:["BOX","SHEET"], req:1},
       {k:"round", label:"ครั้งที่ประเมิน", type:"select", opts:["1","2","3","4"], req:1}
     ],
@@ -1562,14 +1571,19 @@ function viewList(app){
   const all = state.sortAsc ? allRecs(f.id).slice().reverse() : allRecs(f.id);
 
   const years = [...new Set(all.map(r=>(r.date||"").slice(0,4)).filter(Boolean))].sort().reverse();
-  /* ข้อมูลเยอะ — ตั้งต้นที่เดือนล่าสุด กันหน้าค้าง */
-  if(!state.filter.init){
-    state.filter = {init:1};
-    if(all.length > 500 && all[0] && all[0].date){
-      state.filter.y = all[0].date.slice(0,4);
-      state.filter.m = all[0].date.slice(5,7);
+  /* ข้อมูลเยอะ — ตั้งต้นที่เดือนล่าสุด กันหน้าค้าง
+     ตัวกรอง หน้าที่เปิดอยู่ และรายการที่ติ๊กไว้ เป็นของ "ฟอร์มนี้" เท่านั้น
+     ถ้าไม่ล้างตอนสลับฟอร์ม จะพาตัวกรองเดือนของอีกฟอร์มติดไปด้วย
+     แล้วฟอร์มที่มีข้อมูลอยู่จริงจะขึ้นว่า "ไม่พบข้อมูล" */
+  if(state.filter.fid !== f.id){
+    state.filter = {fid:f.id};
+    const newest = state.sortAsc ? all[all.length-1] : all[0];   /* ใบล่าสุด ไม่ว่าจะเรียงทางไหน */
+    if(all.length > 500 && newest && newest.date){
+      state.filter.y = newest.date.slice(0,4);
+      state.filter.m = newest.date.slice(5,7);
     }
     state.page = 1;
+    state.sel = new Set();
   }
   const fl = state.filter;
   const tb = el("div","toolbar");
@@ -1597,6 +1611,7 @@ function viewList(app){
     quickBtn.onclick = ()=> quickPassAll(f);
   }
   const prBtn = el("button","btn", f.evalMulti ? "🖨 พิมพ์รายบุคคล" : "🖨 พิมพ์ / PDF");
+  prBtn.title = "ถ้าไม่ได้ติ๊กเลือกไว้ จะพิมพ์ทุกรายการที่แสดงอยู่";
   prBtn.onclick = ()=> doPrint(f, selectedRecords(all));
   const sumBtn = f.evalMulti ? el("button","btn","🖨 พิมพ์สรุปรวม") : null;
   if(sumBtn){
@@ -1622,6 +1637,10 @@ function viewList(app){
   if(quickBtn) tb.appendChild(quickBtn);
   app.appendChild(tb);
 
+  /* บนมือถือตัวกรองถูกพับไว้หลังปุ่ม ⚙ — ถ้าไม่บอกตรงนี้ ผู้ใช้จะไม่รู้ว่า
+     ที่เห็นอยู่เป็นแค่เดือนล่าสุด ไม่ใช่ทั้งหมด */
+  const fbar = el("div","filterbar");
+  app.appendChild(fbar);
   app.appendChild(el("div","count-note","แตะที่แถวไหนก็ได้เพื่อเปิดดู/แก้ไขรายการนั้น · ปุ่ม “พิมพ์” "
     + (f.monthly ? "จะพิมพ์เป็นตารางทั้งเดือน 1 แผ่น (กระดาษแนวนอน)"
      : f.evalMulti ? "จะพิมพ์เป็นใบแยกรายบุคคล ส่วน “พิมพ์สรุปรวม” จะได้ตารางคะแนนทุกคันในใบเดียว"
@@ -1643,10 +1662,67 @@ function viewList(app){
     const sel = filtered(list).filter(r=>state.sel.has(r.id));
     return sel.length ? sel : filtered(list);
   }
+  /* คำอธิบายขอบเขตที่กำลังแสดง เช่น ["กันยายน 2569", "คำค้น “70-11”"] */
+  function scopeParts(){
+    const y = state.filter.y, m = state.filter.m, s2 = (state.filter.q||"").trim();
+    const out = [];
+    if(y && m) out.push(THMON[+m] + " " + (+y + 543));
+    else if(y) out.push("ปี " + (+y + 543));
+    else if(m) out.push(THMON[+m] + " (ทุกปี)");
+    if(s2) out.push("คำค้น “" + s2 + "”");
+    return out;
+  }
+  function clearFilter(){
+    state.filter = {fid:f.id};
+    state.page = 1;
+    render();
+  }
+  function updateBar(){
+    const list  = filtered(all);
+    const parts = scopeParts();
+    const nSel  = list.filter(r=> state.sel.has(r.id)).length;
+    fbar.innerHTML = "";
+    const txt = el("span","fb-txt");
+    txt.innerHTML = parts.length
+      ? "กำลังแสดง <b>" + list.length.toLocaleString("th-TH") + "</b> จากทั้งหมด <b>"
+        + all.length.toLocaleString("th-TH") + "</b> รายการ · " + esc(parts.join(" · "))
+      : "แสดงทั้งหมด <b>" + all.length.toLocaleString("th-TH") + "</b> รายการ";
+    fbar.appendChild(txt);
+    if(parts.length){
+      const b = el("button","btn sm","แสดงทั้งหมด");
+      b.title = "ล้างตัวกรองปี/เดือน และคำค้น";
+      b.onclick = clearFilter;
+      fbar.appendChild(b);
+    }
+    if(nSel){
+      fbar.appendChild(el("span","fb-sel","ติ๊กเลือกไว้ " + nSel + " รายการ"));
+      const b2 = el("button","btn sm","ล้างที่เลือก");
+      b2.onclick = ()=>{ state.sel = new Set(); renderRows(); };
+      fbar.appendChild(b2);
+    }
+    foldBtn.classList.toggle("hasf", parts.length > 0);
+    prBtn.textContent = f.evalMulti
+      ? (nSel ? "🖨 พิมพ์รายบุคคล (" + nSel + ")" : "🖨 พิมพ์รายบุคคล (" + list.length + ")")
+      : (nSel ? "🖨 พิมพ์ที่เลือก (" + nSel + ")" : "🖨 พิมพ์ / PDF (" + list.length + ")");
+    if(sumBtn) sumBtn.textContent = "🖨 พิมพ์สรุปรวม (" + (nSel || list.length) + ")";
+    csvBtn.textContent = "⬇ CSV (" + list.length.toLocaleString("th-TH") + ")";
+  }
   function renderRows(){
     const list = filtered(all);
+    updateBar();
     if(!list.length){
-      wrap.innerHTML = `<div class="empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก<br><br>ลองเปลี่ยนปี/เดือน หรือกด <b>+ บันทึกใหม่</b></div>`;
+      wrap.innerHTML = "";
+      const em = el("div","empty");
+      em.innerHTML = scopeParts().length
+        ? "ไม่พบรายการใน " + esc(scopeParts().join(" · ")) + "<br>ทั้งฟอร์มนี้มี <b>"
+          + all.length.toLocaleString("th-TH") + "</b> รายการ<br><br>"
+        : "ยังไม่มีรายการในฟอร์มนี้<br><br>";
+      wrap.appendChild(em);
+      if(scopeParts().length){
+        const b = el("button","btn primary","แสดงทั้งหมด");
+        b.onclick = clearFilter;
+        em.appendChild(b);
+      }
       return;
     }
     const PAGE = 300;
@@ -1671,7 +1747,7 @@ function viewList(app){
             if(typeof v==="string" && v.length>40) v = v.slice(0,40)+"…";
             return `<td class="${ci===0?"pri":""}" data-label="${esc(c.t)}">${esc(v)}</td>`;
           }).join("")
-        + `<td data-label="สถานะ">${status}${r._h? ` <span class="pill" style="background:#eef1f5;color:var(--muted)">เดิม</span>`:""}</td>`
+        + `<td data-label="สถานะ">${status}${r._h? ` <span class="pill" style="background:#eef1f5;color:var(--mu)">เดิม</span>`:""}</td>`
         + `<td class="acts"><div class="rowacts">`
         + `<button class="btn sm" data-act="copy" data-id="${r.id}">ทำซ้ำ</button>`
         + `<button class="btn sm" data-act="print" data-id="${r.id}">พิมพ์</button>`
@@ -1686,6 +1762,9 @@ function viewList(app){
       const mb = el("button","btn","แสดงเพิ่ม 300 รายการ");
       mb.onclick = ()=>{ state.page = (state.page||1)+1; renderRows(); };
       more.appendChild(mb);
+      const ab = el("button","btn","แสดงทั้งหมด " + list.length.toLocaleString("th-TH") + " รายการ");
+      ab.onclick = ()=>{ state.page = Math.ceil(list.length / PAGE); renderRows(); };
+      more.appendChild(ab);
       wrap.appendChild(more);
     }
     wrap.querySelector("#selAll").onchange = e=>{
@@ -1694,7 +1773,7 @@ function viewList(app){
     };
     wrap.querySelectorAll(".rowSel").forEach(cb=>{
       cb.onclick = e=> e.stopPropagation();
-      cb.onchange = ()=>{ cb.checked ? state.sel.add(cb.dataset.id) : state.sel.delete(cb.dataset.id); };
+      cb.onchange = ()=>{ cb.checked ? state.sel.add(cb.dataset.id) : state.sel.delete(cb.dataset.id); updateBar(); };
     });
     /* กดตรงไหนของแถวก็เปิดรายการได้ */
     wrap.querySelectorAll("tr.rowlink").forEach(tr=> tr.onclick = ()=>{
@@ -1751,7 +1830,7 @@ function viewOld(f, r){
   const b1 = el("div","body");
   b1.innerHTML = `<div class="fields">` + f.header.map(hd=>{
     const v = hd.type==="date" ? thDate(r[hd.k]) : r[hd.k];
-    return `<div><div style="font-size:14px;color:var(--muted)">${esc(hd.label)}</div><div><b>${esc(v||"-")}</b></div></div>`;
+    return `<div><div style="font-size:14px;color:var(--mu)">${esc(hd.label)}</div><div><b>${esc(v||"-")}</b></div></div>`;
   }).join("") + `</div>`;
   p1.appendChild(b1); app.appendChild(p1);
 
@@ -1786,11 +1865,11 @@ function viewOld(f, r){
       const ps = r[fd.k+"Pos"] || fd.pos || "";
       v = (r[fd.k] ? `<img src="${esc(sigSrc(r[fd.k]))}" alt="ลายเซ็น" style="max-height:${70*(Number(r[fd.k+"Scale"])||1)}px;background:#fff;border:1px solid var(--bd);border-radius:8px"><br>` : "")
         + "<b>" + esc(nm || (r[fd.k] ? "" : "-")) + "</b>"
-        + (ps ? `<div style="font-size:14px;color:var(--muted)">${esc(ps)}</div>` : "");
+        + (ps ? `<div style="font-size:14px;color:var(--mu)">${esc(ps)}</div>` : "");
     }
     else if(fd.type==="date") v = "<b>"+esc(thDate(r[fd.k])||"-")+"</b>";
     else v = "<b>"+esc(r[fd.k]||"-")+"</b>";
-    return `<div><div style="font-size:14px;color:var(--muted)">${esc(fd.label)}</div><div>${v}</div></div>`;
+    return `<div><div style="font-size:14px;color:var(--mu)">${esc(fd.label)}</div><div>${v}</div></div>`;
   }).join("") + `</div>`;
   b3.appendChild(el("div","hint", r._h
     ? "รายการนี้มาจากไฟล์ Excel เดิม จึงแก้ไขไม่ได้ — หากต้องการบันทึกใหม่ให้กด “ทำซ้ำ”<br>ลายเซ็นจะแสดงได้เมื่อเปิดไฟล์นี้จากโฟลเดอร์เดียวกับโฟลเดอร์รูป (_Images)"
@@ -1860,7 +1939,8 @@ function fieldNode(fd, rec, onChange){
     input.oninput  = ()=>{ rec[fd.k] = input.value; };
   }
   wrap.appendChild(input);
-  if(fd.hint) wrap.appendChild(el("div","hint", esc(fd.hint)));
+  const hintTx = typeof fd.hint === "function" ? fd.hint(rec) : fd.hint;
+  if(hintTx) wrap.appendChild(el("div","hint", esc(hintTx)));
   return wrap;
 }
 
@@ -2252,13 +2332,13 @@ function viewForm(app){
   function updateScore(){
     const sc = scoreOf(f, rec);
     if(f.weighted)
-      sb.innerHTML = `<div>คะแนนรวม <b>${sc.sum}</b> / ${sc.max}</div><div>เกรด <b>${sc.grade}</b></div><div>ระดับ <b>${sc.level}</b></div><div style="flex-basis:100%;font-size:14px;color:var(--muted)">${esc(sc.result)}</div>`;
+      sb.innerHTML = `<div>คะแนนรวม <b>${sc.sum}</b> / ${sc.max}</div><div>เกรด <b>${sc.grade}</b></div><div>ระดับ <b>${sc.level}</b></div><div style="flex-basis:100%;font-size:14px;color:var(--mu)">${esc(sc.result)}</div>`;
     else if(f.scoring)
-      sb.innerHTML = `<div>คะแนน <b>${sc.sum}</b> / ${sc.max}</div><div><b>${sc.pct}%</b></div><div>ผล <b style="color:${sc.pass?"var(--ok)":"var(--ng)"}">${sc.result}</b></div><div style="flex-basis:100%;font-size:14px;color:var(--muted)">การดำเนินงาน: ${esc(sc.action)}</div>`;
+      sb.innerHTML = `<div>คะแนน <b>${sc.sum}</b> / ${sc.max}</div><div><b>${sc.pct}%</b></div><div>ผล <b style="color:${sc.pass?"var(--ok)":"var(--ng)"}">${sc.result}</b></div><div style="flex-basis:100%;font-size:14px;color:var(--mu)">การดำเนินงาน: ${esc(sc.action)}</div>`;
     else {
       const done = allItems(f).filter(i=> rec.items[i.k]!==undefined && rec.items[i.k]!=="").length;
       sb.innerHTML = sc.ng
-        ? `<div style="color:var(--ng)">พบไม่ผ่าน <b style="color:var(--ng)">${sc.ng}</b> รายการ: ${sc.ngItems.join(", ")}</div><div style="font-size:14px;color:var(--muted)">กรอกแล้ว ${done}/${sc.total} ข้อ</div>`
+        ? `<div style="color:var(--ng)">พบไม่ผ่าน <b style="color:var(--ng)">${sc.ng}</b> รายการ: ${sc.ngItems.join(", ")}</div><div style="font-size:14px;color:var(--mu)">กรอกแล้ว ${done}/${sc.total} ข้อ</div>`
         : done===sc.total
           ? `<div>ผลตรวจ <b style="color:var(--ok)">ปกติทุกรายการ</b> (${done}/${sc.total} ข้อ)</div>`
           : `<div>กรอกแล้ว <b>${done}</b> / ${sc.total} ข้อ${done? " — ยังไม่พบรายการไม่ผ่าน":""}</div>`;
@@ -2854,10 +2934,10 @@ function viewMulti(app){
   const pick = el("div","pickbox");
   const inp = el("input"); inp.type="text"; inp.placeholder = M.addLabel || "พิมพ์เพื่อค้นหา";
   inp.setAttribute("list","dl_"+M.src);
-  if(!document.getElementById("dl_"+M.src)){
-    const dl = el("datalist"); dl.id = "dl_"+M.src;
-    dl.innerHTML = mlist(M.src).map(v=>`<option value="${esc(v)}">`).join("");
-    document.body.appendChild(dl);
+  {
+    let dl = document.getElementById("dl_"+M.src);
+    if(!dl){ dl = el("datalist"); dl.id = "dl_"+M.src; document.body.appendChild(dl); }
+    dl.innerHTML = mlist(M.src).map(v=>`<option value="${esc(v)}">`).join("");   /* เติมใหม่ทุกครั้ง เผื่อเพิ่งเพิ่มรายชื่อ */
   }
   const bAdd = el("button","btn primary","+ เพิ่ม");
   const addTyped = ()=>{
@@ -2932,7 +3012,7 @@ function viewMulti(app){
         const dv = deriveOf(name);
         if(dv){
           const tag = el("span","pill", esc(dv));
-          tag.style.cssText = "background:#e8f0fb;color:var(--brand)";
+          tag.style.cssText = "background:#e8f0fb;color:var(--pd)";
           tag.title = M.deriveLabel || "";
           head.appendChild(tag);
         } else {
@@ -2945,7 +3025,7 @@ function viewMulti(app){
           head.appendChild(sel);
         }
       }
-      head.appendChild(el("span", "pill " + (st.bad.length? "ng" : st.done===st.total? "ok":"warn"),
+      head.appendChild(el("span", "pill stpill " + (st.bad.length? "ng" : st.done===st.total? "ok":"warn"),
         st.bad.length ? `ไม่ผ่าน ${st.bad.length} ข้อ (${st.bad.join(", ")})`
         : st.done===st.total ? `ผ่านครบ ${st.total} ข้อ` : `กรอกแล้ว ${st.done}/${st.total}`));
       const bOk = el("button","btn sm", `ผ่านทั้งหมด (${good})`);
@@ -2963,8 +3043,9 @@ function viewMulti(app){
           g.items.forEach(it=> body.appendChild(choiceRow(f, it, {items:o}, ()=>{
             const s2 = statusOf(o);
             row.className = "mrow" + (s2.bad.length? " bad" : s2.done===s2.total? " done":"");
-            head.querySelector(".pill").className = "pill " + (s2.bad.length? "ng" : s2.done===s2.total? "ok":"warn");
-            head.querySelector(".pill").textContent = s2.bad.length ? `ไม่ผ่าน ${s2.bad.length} ข้อ (${s2.bad.join(", ")})`
+            const stp = head.querySelector(".stpill");
+            stp.className = "pill stpill " + (s2.bad.length? "ng" : s2.done===s2.total? "ok":"warn");
+            stp.textContent = s2.bad.length ? `ไม่ผ่าน ${s2.bad.length} ข้อ (${s2.bad.join(", ")})`
               : s2.done===s2.total ? `ผ่านครบ ${s2.total} ข้อ` : `กรอกแล้ว ${s2.done}/${s2.total}`;
           })));
         });
@@ -3178,7 +3259,7 @@ function viewEval(app){
       head.appendChild(nm);
 
       if(on){
-        head.appendChild(el("span","pill " + (g.sum === FULL ? "ok" : g.sum >= 80 ? "warn" : "ng"),
+        head.appendChild(el("span","pill scpill " + (g.sum === FULL ? "ok" : g.sum >= 80 ? "warn" : "ng"),
           g.sum + " คะแนน · เกรด " + esc(g.grade)));
         const bEx = el("button","btn sm", expanded.has(k) ? "ซ่อนคะแนน ▲" : "หักคะแนน ▼");
         bEx.onclick = ()=>{ expanded.has(k) ? expanded.delete(k) : expanded.add(k); draw(); };
@@ -3204,9 +3285,9 @@ function viewEval(app){
               v = Math.max(0, Math.min(Number(it.max)||0, v));
               o.items[it.k] = v;
               const g2 = gradeOf(o);
-              const pill = head.querySelector(".pill.ok, .pill.warn, .pill.ng");
+              const pill = head.querySelector(".scpill");
               if(pill){
-                pill.className = "pill " + (g2.sum === FULL ? "ok" : g2.sum >= 80 ? "warn" : "ng");
+                pill.className = "pill scpill " + (g2.sum === FULL ? "ok" : g2.sum >= 80 ? "warn" : "ng");
                 pill.textContent = g2.sum + " คะแนน · เกรด " + g2.grade;
               }
               row.className = "mrow" + (g2.sum === FULL ? " done" : " bad");
@@ -3373,6 +3454,7 @@ function printEvalSummary(f, list){
 function viewMaster(app){
   const kind = state.fid;
   const isCon = kind === "contractors";
+  if(state.mkind !== kind){ state.mkind = kind; state.mq = ""; }   /* คำค้นเป็นของแต่ละหน้า */
   setTitle(isCon ? "ผู้รับเหมาในการบริการขนส่ง (AVL)" : "พนักงานคลังสินค้าและจัดส่ง",
            isCon ? "FM-QMR-020 Rev.00 · แก้ไข/เพิ่มรายชื่อได้" : "รายชื่อพนักงาน · แก้ไข/เพิ่มรายชื่อได้");
 
@@ -4080,7 +4162,8 @@ function doPrint(f, list){
   const CAP = (f.printMode==="doc" || f.monthly) ? 60 : 600;
   if(list.length > CAP){
     if(!confirm(`เลือกไว้ ${list.length.toLocaleString("th-TH")} รายการ — จะพิมพ์เฉพาะ ${CAP} รายการล่าสุดเพื่อไม่ให้เอกสารยาวเกินไป\n(ถ้าต้องการทั้งหมด ให้กรองเป็นรายเดือนแล้วพิมพ์ทีละเดือน)`)) return;
-    list = list.slice(0, CAP);
+    /* เรียงเก่า→ใหม่ไปแล้ว ใบล่าสุดจึงอยู่ท้ายรายการ */
+    list = f.printMode === "doc" ? list.slice(0, CAP) : list.slice(-CAP);
   }
   const area = $("#printArea");
   setPaper(!!f.landscape);

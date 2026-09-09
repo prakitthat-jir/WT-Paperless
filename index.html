@@ -3761,11 +3761,13 @@ function viewConnect(app){
   if(needLogin){
     b.appendChild(el("div","okline","🔒 เชื่อมต่อกับ " + esc(apiOrigin()) + " ได้แล้ว — ใส่รหัสเข้าใช้งานเพื่อดูข้อมูล"));
     const f = el("label","f","<span>รหัสเข้าใช้งาน</span>");
-    const inp = el("input"); inp.type = "text"; inp.inputMode = "numeric";
-    inp.autocomplete = "one-time-code"; inp.placeholder = "เช่น 123456";
+    const inp = el("input"); inp.type = "text";
+    inp.autocomplete = "off"; inp.placeholder = "เช่น ifcc";
+    inp.setAttribute("autocapitalize", "none");   /* iOS ชอบเปลี่ยนตัวแรกเป็นตัวใหญ่ */
+    inp.setAttribute("autocorrect", "off"); inp.spellcheck = false;
     inp.style.fontSize = "1.4rem"; inp.style.letterSpacing = "4px"; inp.style.textAlign = "center";
     f.appendChild(inp);
-    f.appendChild(el("div","hint","ขอรหัสจากหัวหน้าแผนก — รหัสแสดงอยู่ในหน้าต่างสีดำของเครื่องแม่"));
+    f.appendChild(el("div","hint","ขอรหัสจากหัวหน้าแผนก — พิมพ์ใหญ่พิมพ์เล็กไม่ต่างกัน"));
     b.appendChild(f);
 
     const msg = el("div","hint"); msg.style.color = "var(--er)"; msg.style.fontWeight = "700";

@@ -556,10 +556,12 @@ const handler = async (req,res)=>{
       const wait = loginBlocked(ip);
       if(wait) return send(res, 429, {ok:false, error:"ใส่รหัสผิดหลายครั้ง กรุณารออีก " + Math.ceil(wait/60) + " นาที"});
       const b = await readBody(req);
-      const given = String((b && b.code) || "").trim();
-      const want  = String(CFG.accessCode);
-      const ok = given.length === want.length &&
-                 crypto.timingSafeEqual(Buffer.from(given.padEnd(32)), Buffer.from(want.padEnd(32)));
+      /* ไม่สนพิมพ์ใหญ่พิมพ์เล็ก และเทียบบนบัฟเฟอร์ยาวคงที่ เพื่อไม่ให้ภาษาไทย/อีโมจิทำให้ล้ม */
+      const norm = v => String(v || "").trim().toLowerCase();
+      const fixed = v => { const buf = Buffer.alloc(64); Buffer.from(v, "utf8").subarray(0, 64).copy(buf); return buf; };
+      const given = norm(b && b.code);
+      const want  = norm(CFG.accessCode);
+      const ok = given.length === want.length && crypto.timingSafeEqual(fixed(given), fixed(want));
       if(!ok){ noteLoginFail(ip); return send(res, 401, {ok:false, error:"รหัสไม่ถูกต้อง"}); }
       LOGIN_FAILS.delete(ip);
       console.log("  เข้าสู่ระบบสำเร็จจาก " + ip);

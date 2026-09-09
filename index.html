@@ -992,17 +992,30 @@ const CONN_KEY = "wtPaperless.conn";
 let CONN = (()=>{ try{ const r = localStorage.getItem(CONN_KEY); if(r) return JSON.parse(r); }catch(e){}
                   return {api:"", token:""}; })();
 function saveConn(){ try{ localStorage.setItem(CONN_KEY, JSON.stringify(CONN)); }catch(e){} }
-function setApiBase(u){
+function setApiBase(u, keepToken){
   const clean = String(u||"").trim().replace(/\/*$/, "");
   const next = clean ? clean + "/" : "";
-  if(next !== CONN.api){ CONN.api = next; CONN.token = ""; }   /* เปลี่ยนเครื่องแม่ = ต้องใส่รหัสใหม่ */
+  if(next !== CONN.api){ CONN.api = next; if(!keepToken) CONN.token = ""; }   /* เปลี่ยนเครื่องแม่เอง = ต้องใส่รหัสใหม่ */
   saveConn();
 }
 (function initConn(){
   const q = new URLSearchParams(location.search).get("api");
   if(q) setApiBase(q);
 })();
-let CONN_ERR = "";           /* ข้อความอธิบายว่าทำไมต่อไม่ได้ */
+let CONN_ERR = "";
+let RETRY_TIMER = null, RETRY_BUSY = false;   /* ลองต่อเครื่องแม่ใหม่เองเป็นระยะ */
+function stopRetry(){ if(RETRY_TIMER){ clearInterval(RETRY_TIMER); RETRY_TIMER = null; } }
+function startRetry(){
+  if(RETRY_TIMER) return;
+  RETRY_TIMER = setInterval(async ()=>{
+    if(AUTH_GATE !== "connect"){ stopRetry(); return; }
+    if(RETRY_BUSY || document.hidden) return;
+    RETRY_BUSY = true;
+    try{ await bootConnect(); }catch(e){}
+    RETRY_BUSY = false;
+    if(AUTH_GATE !== "connect"){ stopRetry(); render(); }
+  }, 15000);
+}           /* ข้อความอธิบายว่าทำไมต่อไม่ได้ */
 let OFFLINE_OK = false;      /* ผู้ใช้เลือก "ใช้งานแบบออฟไลน์" แล้ว */
 /* ลองทักเซิร์ฟเวอร์ที่ที่อยู่หนึ่ง — คืน object ถ้าใช่, null ถ้าไม่ใช่ */
 function probeBase(base){
@@ -1013,6 +1026,16 @@ function probeBase(base){
     .catch(()=> null);
 }
 function apiBase(){ return CONN.api || ""; }
+/* ถามที่อยู่เครื่องแม่ล่าสุดจาก api.json ที่วางคู่กับหน้าเว็บนี้ —
+   เครื่องแม่เขียนไฟล์นี้ใหม่ทุกครั้งที่เปิดอุโมงค์ มือถือจึงเปิดลิงก์เดิมได้ตลอด */
+function discoverApi(){
+  let u;
+  try{ u = new URL("api.json", location.href).href + "?t=" + Date.now(); }catch(e){ return Promise.resolve(""); }
+  return fetch(u, {cache:"no-store"})
+    .then(r=> r.ok ? r.json() : null)
+    .then(j=> (j && typeof j.api === "string") ? j.api : "")
+    .catch(()=> "");
+}
 /* รูปลายเซ็นเก็บเป็น path ญาติของเครื่องแม่ — เวลาเปิดจาก GitHub Pages ต้องชี้กลับไปที่เครื่องแม่
    และแนบโทเคนไปด้วย เพราะ <img> ส่ง header Authorization ไม่ได้ */
 function sigSrc(v){
@@ -1087,10 +1110,22 @@ async function bootConnect(){
   let p = null;
   if(CONN.api){
     p = await probeBase(CONN.api);
-    if(!p) CONN_ERR = "เชื่อมต่อกับ " + apiOrigin() + " ไม่ได้ — เครื่องแม่อาจปิดอยู่ หรือที่อยู่เปลี่ยนไปแล้ว";
   } else {
     p = await probeBase("");
   }
+  /* ที่อยู่ที่จำไว้ใช้ไม่ได้แล้ว (เครื่องแม่เปิดใหม่ = อุโมงค์เปลี่ยนชื่อ) —
+     ไปถามที่อยู่ล่าสุดจากหน้าเว็บถาวร แล้วต่อใหม่ให้เอง */
+  if(!p){
+    const found = await discoverApi();
+    if(found){
+      const clean = found.replace(/\/*$/, "") + "/";
+      if(clean !== CONN.api){
+        setApiBase(found, true);            /* เครื่องแม่เครื่องเดิม → เก็บรหัสที่เคยใส่ไว้ */
+        p = await probeBase(CONN.api);
+      }
+    }
+  }
+  if(!p && CONN.api) CONN_ERR = "เชื่อมต่อกับเครื่องแม่ไม่ได้ — เครื่องแม่อาจปิดอยู่ หรือยังไม่ได้เปิดโปรแกรม";
   if(!p){
     SERVER = false;
     if(!OFFLINE_OK) AUTH_GATE = "connect";
@@ -1101,6 +1136,7 @@ async function bootConnect(){
     SERVER = true; SERVER_FILE = p.file || "";
     NEEDS_AUTH = !!p.needsAuth;
     PUBLIC_URL = p.publicUrl || "";
+    if(p.pagesUrl) setPagesUrl(p.pagesUrl);      /* ที่อยู่หน้าเว็บถาวร — ใช้ทำ QR และหาเครื่องแม่ครั้งหน้า */
     if(Array.isArray(p.urls)) p.urls.forEach(u=>{ if(!SERVER_URLS.includes(u)) SERVER_URLS.push(u); });
 
     if(NEEDS_AUTH && !CONN.token){ AUTH_GATE = "login"; return; }
@@ -2527,19 +2563,20 @@ function setPagesUrl(u){
   try{ localStorage.setItem("wtPaperless.pages", String(u||"").trim()); }catch(e){}
 }
 /* ลิงก์สำหรับให้พนักงานเปิด
-   - มีอุโมงค์ + รู้ที่อยู่หน้าเว็บ  → เปิดได้จากทุกที่ (แนบ ?api= ไปด้วย)
-   - มีแต่อุโมงค์                  → เปิดผ่านอุโมงค์ตรง ๆ
-   - ไม่มีอุโมงค์                  → ที่อยู่ในวง LAN เหมือนเดิม */
+   - รู้ที่อยู่หน้าเว็บถาวร  → แจกลิงก์นั้น (แอปหาที่อยู่เครื่องแม่เองจาก api.json)
+   - มีแต่อุโมงค์          → เปิดผ่านอุโมงค์ตรง ๆ
+   - ไม่มีทั้งคู่           → ที่อยู่ในวง LAN เหมือนเดิม */
 function shareUrl(){
   const page = pagesUrl().replace(/\/*$/, "");
-  if(PUBLIC_URL && page) return page + "/?api=" + encodeURIComponent(PUBLIC_URL);
+  if(page) return page + "/";
   if(PUBLIC_URL) return PUBLIC_URL + "/";
   const here = location.origin + location.pathname.replace(/[^/]*$/, "");
   if(/^https?:/.test(here) && !/^https?:\/\/(localhost|127\.0\.0\.1)/.test(here)) return here;
   if(SERVER_URLS.length) return SERVER_URLS[0];
   return here;
 }
-function shareIsPublic(){ return !!PUBLIC_URL; }
+function shareIsPublic(){ return !!(pagesUrl() || PUBLIC_URL); }
+function sharePermanent(){ return !!pagesUrl(); }
 
 function qrMatrix(text, forceMask){
   /* [จำนวน codeword ทั้งหมด, EC ต่อบล็อก, บล็อกกลุ่ม1, data cw กลุ่ม1, บล็อกกลุ่ม2, data cw กลุ่ม2] — ระดับ M */
@@ -3760,6 +3797,8 @@ function viewConnect(app){
       : "📡 แอปนี้เก็บข้อมูลไว้ที่เครื่องแม่ในออฟฟิศ — ต้องรู้ที่อยู่ของเครื่องนั้นก่อนจึงจะใช้งานได้"));
     b.appendChild(el("div","hint",
       "<b>วิธีที่ง่ายที่สุด:</b> ให้คนที่อยู่หน้าเครื่องแม่เปิดเมนู “ติดตั้งเป็นแอป” แล้วส่ง QR หรือลิงก์มาให้ — สแกนครั้งเดียวจบ ไม่ต้องพิมพ์อะไร"));
+    b.appendChild(el("div","hint","⏳ แอปกำลังลองหาเครื่องแม่ใหม่เองทุก 15 วินาที — ถ้าเครื่องแม่เพิ่งเปิด รออีกสักครู่แล้วหน้านี้จะหายไปเอง"));
+    startRetry();
     const f = el("label","f","<span>หรือวางที่อยู่เอง</span>");
     const inp = el("input"); inp.type = "text";
     inp.placeholder = "https://xxxx-xxxx.trycloudflare.com";
@@ -3835,7 +3874,9 @@ function viewInstall(app){
     const alt = el("div","hint","ถ้าที่อยู่ข้างบนเปิดไม่ได้ ลองอันนี้: " + SERVER_URLS.slice(1).join("  ·  "));
     tx.appendChild(alt);
   }
-  tx.appendChild(el("div","hint", shareIsPublic()
+  tx.appendChild(el("div","hint", sharePermanent()
+    ? "🌏 <b>ลิงก์นี้ถาวร ไม่เปลี่ยนอีกแล้ว</b> — ติดตั้งครั้งเดียวใช้ได้ตลอด แอปจะหาที่อยู่เครื่องแม่ล่าสุดเองทุกครั้งที่เปิด<br>ขอแค่เครื่องแม่เปิดอยู่และต่อเน็ตได้ (เปิด START-WT-Paperless.bat ค้างไว้)"
+    : shareIsPublic()
     ? "🌏 ลิงก์นี้เปิดได้จากทุกที่ ไม่ต้องอยู่ Wi-Fi เดียวกัน — แต่เครื่องแม่ต้องเปิด START-WT-Paperless.bat ค้างไว้<br><b>ที่อยู่จะเปลี่ยนใหม่ทุกครั้งที่เปิดโปรแกรม</b> ถ้าพนักงานเข้าไม่ได้ ให้สแกน QR อันใหม่จากหน้านี้"
     : "⚠️ ตอนนี้ยังไม่ได้เปิดอุโมงค์ — มือถือกับเครื่องแม่ต้องอยู่ในวง Wi-Fi เดียวกัน และเครื่องแม่ต้องเปิด START-WT-Paperless.bat ค้างไว้"));
   box.appendChild(tx);

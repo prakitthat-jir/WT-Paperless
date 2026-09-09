@@ -4,7 +4,7 @@
    หมายเหตุ: เบราว์เซอร์จะลงทะเบียนไฟล์นี้เฉพาะเมื่อเปิดผ่าน
              https:// หรือ http://localhost เท่านั้น
    ============================================================ */
-const VERSION = "wt-paperless-v6";
+const VERSION = "wt-paperless-v7";
 const SHELL = [
   "./",
   "./index.html",                    /* ชื่อไฟล์บน GitHub Pages */
@@ -48,6 +48,9 @@ self.addEventListener("fetch", e=>{
 
   /* ── ข้อมูลสด: ห้ามแคชเด็ดขาด ── */
   if(url.pathname.startsWith("/api/")) return;
+
+  /* ── ที่อยู่เครื่องแม่ล่าสุด: ต้องเอาของสดเสมอ ไม่งั้นมือถือจะจำที่อยู่เก่า ── */
+  if(/api\.json$/.test(url.pathname)) return;
 
   /* ── รูปลายเซ็นย้อนหลัง (มีหลายหมื่นไฟล์): ผ่านไปตรง ๆ ── */
   if(/_Images\//.test(url.pathname)) return;

@@ -675,7 +675,10 @@ function startTunnel(onUrl){
   if(process.env.WT_NO_TUNNEL) return null;
   let proc;
   try{
-    proc = spawn(cloudflaredPath(), ["tunnel","--no-autoupdate","--url","http://localhost:" + PORT],
+    proc = spawn(cloudflaredPath(), ["tunnel","--no-autoupdate",
+                                  /* http2: เครือข่ายออฟฟิศบล็อก QUIC (UDP 7844) ถ้าใช้ค่าเริ่มต้นอุโมงค์จะตอบ 530 */
+                                  "--protocol","http2",
+                                  "--url","http://localhost:" + PORT],
                  {windowsHide:true});
   }catch(e){ return null; }
   proc.on("error", ()=>{

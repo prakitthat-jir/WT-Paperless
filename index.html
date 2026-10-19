@@ -330,6 +330,24 @@ label.f > span{display:block;font-size:.76rem;font-weight:700;color:var(--mu);ma
 .quickbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:11px}
 .pickbox{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .pickbox input{max-width:230px}
+.pickbox input[type="date"]{max-width:168px}
+.inlinechk{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--tx2);font-weight:600;cursor:pointer}
+.inlinechk input{width:17px;height:17px;margin:0;flex:none}
+/* รายชื่อทั้งชุดให้ติ๊กเลือก — เลือกทุกคนได้ในหน้าเดียว */
+.roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:6px;max-height:340px;overflow:auto;
+  border:1px solid var(--bd);border-radius:var(--r);padding:9px;background:var(--bg3)}
+.rs{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:var(--rs);cursor:pointer;
+  background:var(--card);border:1px solid transparent}
+.rs:hover{border-color:var(--p)}
+.rs.on{background:var(--ac);border-color:var(--p)}
+.rs.did{opacity:.62}
+.rs input{width:18px;height:18px;margin:0;flex:none}
+.rs .rstx{min-width:0}
+.rs b{display:block;font-weight:700;font-size:.88rem;line-height:1.3;color:var(--tx)}
+.rs small{display:block;font-size:.73rem;color:var(--mu);line-height:1.35}
+.rs small.didtx{color:var(--pd);font-weight:700}
+.multi th button{display:block;margin:5px auto 0;font-weight:700}
+.multi input.gnote{min-width:160px;padding:8px 10px;font-size:.86rem}
 
 /* ───────── Bottom bar / toast ───────── */
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:35;display:flex;gap:9px;justify-content:flex-end;
@@ -706,7 +724,9 @@ const FORMS = {
     title:"การตรวจสอบรถขนส่ง ก่อน-หลัง ขึ้นสินค้า",
     code:"FM-PB-007", rev:"Rev.03", eff:"09/03/63",
     scale:CHECK_OKNG, printMode:"doc", colLabel:"plate", printStd:1,   /* พิมพ์ข้อความมาตรฐานใต้แต่ละรายการ (ตามฟอร์มเดิมใน AppSheet) */
-    multi:{src:"plates", field:"plate", label:"เลือกทะเบียนรถที่ตรวจวันนี้", mode:"list", unit:"คัน", addLabel:"เพิ่มทะเบียนรถ", derive:["delivery"], deriveLabel:"ประเภทการจัดส่ง"},
+    multi:{src:"plates", field:"plate", label:"เลือกทะเบียนรถที่ตรวจวันนี้", mode:"list", unit:"คัน",
+           addLabel:"ค้นหา/พิมพ์ทะเบียนรถ", addBtn:"+ เพิ่มทะเบียนนี้", subOf:v=> plateType(v),
+           derive:["delivery"], deriveLabel:"ประเภทการจัดส่ง"},
     quickAll:{label:"ตรวจผ่านทั้งหมดวันนี้", unit:"คัน"},
     header:[
       {k:"date",  label:"วันที่", type:"date", req:1, def:"today"},
@@ -752,7 +772,8 @@ const FORMS = {
     title:"การตรวจสุขลักษณะส่วนบุคคล คลังสินค้าและจัดส่ง",
     code:"FM-CG-029", rev:"Rev.00", eff:"01/11/63",
     scale:CHECK_SLASH, printMode:"rows", rowLabel:"employee", rowLabelText:"ชื่อพนักงาน",
-    multi:{src:"employees", field:"employee", label:"เลือกพนักงานที่ตรวจ", mode:"grid", unit:"คน", addLabel:"เพิ่มชื่อพนักงาน"},
+    multi:{src:"employees", field:"employee", label:"เลือกพนักงานที่ตรวจ", mode:"grid", unit:"คน",
+           addLabel:"ค้นหา/พิมพ์ชื่อพนักงาน", addBtn:"+ เพิ่มชื่อนี้"},
     header:[
       {k:"date", label:"วันที่", type:"date", req:1, def:"today"},
       {k:"time", label:"เวลา", type:"time", def:"now"},
@@ -783,6 +804,8 @@ const FORMS = {
     title:"การสำรวจวัสดุที่ทำด้วยแก้ว และวัสดุที่แตกหักได้ (คลังสินค้าและจัดส่ง)",
     code:"FM-CG-027", rev:"Rev.01", eff:"01/10/65",
     scale:CHECK_GLASS, printMode:"matrix", colLabel:"date", colLabelText:"วันที่",
+    multi:{field:"date", dates:1, mode:"list", unit:"วัน",
+           label:"เลือกวันที่สำรวจ (เลือกหลายวันพร้อมกันได้)", labelOf:v=> thDate(v)},
     header:[{k:"date", label:"วันที่สำรวจ", type:"date", req:1, def:"today"}],
     footer:[
       {k:"fix", label:"การแก้ไข", type:"textarea"},
@@ -827,6 +850,17 @@ const FORMS = {
     subtitle:"ข้อกำหนดในการตรวจสอบ (ด้านคุณภาพ สิ่งแวดล้อม สุขลักษณะ อาชีวอนามัยและความปลอดภัย)",
     code:"FM-TB-012", rev:"Rev.00", eff:"07/11/60",
     scale:SCORE_123, printMode:"doc", scoring:{max:3, passPct:90},
+    multi:{field:"contractorCode", mode:"list", unit:"ราย", freeText:false,
+           label:"เลือกผู้รับเหมาที่ตรวจในรอบนี้",
+           addLabel:"ค้นหารหัส / ชื่อ / ทะเบียนรถ",
+           fills:["contractor","plate","delivery"],   /* เติมให้เองจากทะเบียน AVL ไม่ต้องถาม */
+           values:()=> conSorted((MASTER.contractors||[]).filter(c=> !c.off)).map(c=> String(c.code)),
+           labelOf:v=>{ const c = conByCode(v); return c ? c.code + " — " + c.name : String(v); },
+           subOf:v=>{ const c = conByCode(v); return c ? [c.plate || "ไม่มีทะเบียน", c.type].filter(Boolean).join("  ·  ") : ""; },
+           filters:[["","ทั้งหมด"],["BOX","🧊 กล่อง (BOX)"],["SHEET","📄 แผ่น (SHEET)"]],
+           filterOf:v=>{ const c = conByCode(v); return c ? c.type : ""; },
+           resolve:v=>{ const c = conByCode(v);
+             return c ? {contractorCode:String(c.code), contractor:c.name, plate:c.plate || "", delivery:c.type || ""} : null; }},
     header:[
       {k:"date", label:"วันที่ตรวจสอบ", type:"date", req:1, def:"today"},
       {k:"contractorCode", label:"รหัสผู้รับเหมา", type:"contractor", req:1},
@@ -1635,7 +1669,8 @@ function viewList(app){
   const q = el("input"); q.type="text"; q.placeholder="ค้นหา..."; q.value = fl.q||""; q.style.width="180px";
   q.oninput = ()=>{ state.filter.q = q.value; state.page = 1; renderRows(); };
   const addBtn = el("button","btn primary", f.evalMulti ? "+ ประเมินทีละทะเบียน"
-                    : f.multi ? "+ บันทึกหลาย"+(f.multi.unit||"รายการ")+"พร้อมกัน" : "+ บันทึกใหม่");
+                    : f.multi ? "+ บันทึกหลาย"+(f.multi.unit||"รายการ")+"พร้อมกัน"
+                    : f.monthly ? "+ บันทึกตารางทั้งเดือน" : "+ บันทึกใหม่");
   addBtn.onclick = ()=> f.evalMulti ? go("eval",{fid:f.id})
                       : f.multi ? go("multi",{fid:f.id}) : go("form",{fid:f.id, id:null});
   const addOne = (f.multi || f.evalMulti)
@@ -2917,26 +2952,98 @@ function frequentValues(fid, field, n){
   return Object.keys(c).sort((a,b)=> c[b]-c[a]).slice(0, n);
 }
 
+/* ---------- ตัวช่วยของหน้า "บันทึกหลายรายการพร้อมกัน" ---------- */
+function conByCode(code){ return (MASTER.contractors||[]).find(c=> String(c.code)===String(code)) || null; }
+function multiValues(f){ const M = f.multi; return M.values ? M.values() : mlist(M.src); }
+function multiLabel(f, v){ const M = f.multi; return M.labelOf ? M.labelOf(v) : String(v); }
+function multiSub(f, v){ const M = f.multi; return M.subOf ? M.subOf(v) : ""; }
+/* ฟิลด์ที่ไม่ต้องถามในหน้ารวม เพราะผูกกับแต่ละแถว หรือเติมให้เองจากทะเบียน AVL */
+function multiSkip(f){
+  const M = f.multi;
+  return [M.field].concat(M.derive||[], M.fills||[]);
+}
+/* ค่าที่บันทึกไว้แล้ว — กันบันทึกซ้ำ และกันปุ่ม "เลือกทั้งหมด" ไปเลือกซ้ำ */
+function recordedOn(f, dateISO){
+  const M = f.multi;
+  if(M.dates) return new Set(allRecs(f.id).map(r=> r.date).filter(Boolean));
+  if(!dateISO) return new Set();
+  return new Set(allRecs(f.id).filter(r=> r.date===dateISO).map(r=> String(r[M.field]||"")).filter(Boolean));
+}
+/* วันของเดือนที่ยังไม่มีใบ (ถึงวันนี้) — ใช้กับฟอร์มที่หนึ่งใบ = หนึ่งวัน */
+function missingDays(f, ym){
+  const had = recordedOn(f, "");
+  const today = todayISO(), out = [];
+  const [y, m] = ym.split("-").map(Number);
+  const last = new Date(y, m, 0).getDate();
+  for(let d = 1; d <= last; d++){
+    const iso = ym + "-" + String(d).padStart(2, "0");
+    if(iso > today) break;
+    if(!had.has(iso)) out.push(iso);
+  }
+  return out;
+}
+function dateRange(from, to, weekdaysOnly){
+  const out = [];
+  if(!from || !to || from > to) return out;
+  const a = new Date(from + "T00:00:00"), b = new Date(to + "T00:00:00");
+  for(let d = a; d <= b; d = new Date(d.getTime() + 864e5)){
+    if(weekdaysOnly && (d.getDay() === 0 || d.getDay() === 6)) continue;
+    out.push(new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10));
+  }
+  return out;
+}
+function daysAgoISO(n){
+  return new Date(Date.now() - n*864e5 - new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+}
+
 function viewMulti(app){
   const f = FORMS[state.fid];
   const M = f.multi, unit = M.unit || "รายการ";
+  const byDate = !!M.dates;                    /* หนึ่งใบ = หนึ่งวัน → เลือกวันแทนเลือกชื่อ */
   const good = f.scale.find(s=> s.good===1).v;
   const items = allItems(f);
+  const skip = multiSkip(f);
+  const notes = f.footer.filter(x=> x.type==="textarea");   /* เช่น เหตุผล / การแก้ไข — เป็นของแต่ละใบ */
   setTitle(f.title, "บันทึกหลายรายการพร้อมกัน · "+f.code+" "+f.rev);
 
   const base = newRecord(f);
-  const chosen = new Map();          // ชื่อ/ทะเบียน -> {items}
+  const chosen = new Map();          // ชื่อ/ทะเบียน/รหัส/วันที่ -> {items}
+  const extra  = new Map();          // ค่าเดียวกัน -> ฟิลด์ข้อความของใบนั้น
   const expanded = new Set();
   const derived = new Map();         // ชื่อ/ทะเบียน -> ค่าที่เดาได้ เช่น ประเภทการจัดส่ง
   const deriveKey = (M.derive||[])[0] || "";
   const deriveOf = v => deriveKey ? (derived.has(v) ? derived.get(v) : plateType(v)) : "";
+  let q = "", kind = "";             /* คำค้น + ตัวกรองรายชื่อ — ตัวแปรในหน้า ไม่ปนข้ามฟอร์ม */
+  let had = recordedOn(f, base.date);
 
   /* ---- ข้อมูลหลัก ---- */
   const p1 = el("div","panel"); p1.appendChild(el("h2",null,"ข้อมูลหลัก (ใช้กับทุก"+unit+")"));
   const b1 = el("div","body"); const flds = el("div","fields");
-  f.header.filter(fd=> fd.k!==M.field && !(M.derive||[]).includes(fd.k)).forEach(fd=> flds.appendChild(fieldNode(fd, base, ()=>{})));
-  f.footer.filter(fd=> fd.type!=="sign" && fd.type!=="textarea").forEach(fd=> flds.appendChild(fieldNode(fd, base, ()=>{})));
+  f.header.filter(fd=> !skip.includes(fd.k)).forEach(fd=> flds.appendChild(fieldNode(fd, base, onBaseChange)));
+  f.footer.filter(fd=> fd.type!=="sign" && fd.type!=="textarea")
+          .forEach(fd=> flds.appendChild(fieldNode(fd, base, ()=>{})));
   b1.appendChild(flds);
+
+  /* เลือกวันเร็ว ๆ — วันนี้ / เมื่อวาน / วันก่อน */
+  const dateFd = f.header.find(fd=> fd.k==="date" && !skip.includes(fd.k));
+  if(dateFd){
+    const dchips = el("div","chips");
+    [["วันนี้",0],["เมื่อวาน",1],["2 วันก่อน",2],["3 วันก่อน",3]].forEach(([lb,back])=>{
+      const iso = daysAgoISO(back);
+      const c = el("button","chip", esc(lb) + (back ? " · "+thDate(iso) : ""));
+      c.dataset.iso = iso;
+      c.onclick = ()=>{
+        base.date = iso;
+        const inp = flds.querySelector('input[type="date"]');
+        if(inp) inp.value = iso;
+        onBaseChange();
+      };
+      dchips.appendChild(c);
+    });
+    b1.appendChild(dchips);
+    b1._dchips = dchips;
+  }
+
   b1.appendChild(el("div","hint", (function(){
     const ok = f.footer.filter(x=> x.type==="sign" && base[x.k]).map(x=> x.label);
     return ok.length
@@ -2955,50 +3062,98 @@ function viewMulti(app){
     qa.onclick = ()=> quickPassAll(f);
     quick.appendChild(qa);
   }
-  const last = lastDaySet(f.id, M.field);
-  if(last.values.length){
-    const bl = el("button","btn primary", `ใช้ชุดเดิมของวันที่ ${thDate(last.date)} (${last.values.length} ${unit})`);
-    bl.onclick = ()=>{ last.values.forEach(v=> add(v, true)); draw(); };
-    quick.appendChild(bl);
+  if(!byDate){
+    const last = lastDaySet(f.id, M.field);
+    if(last.values.length){
+      const bl = el("button","btn primary", `ใช้ชุดเดิมของวันที่ ${thDate(last.date)} (${last.values.length} ${unit})`);
+      bl.onclick = ()=>{ last.values.forEach(v=> add(v, true)); draw(); };
+      quick.appendChild(bl);
+    }
   }
-  const bAll = el("button","btn", `เลือกทั้งหมด (${mlist(M.src).length} ${unit})`);
-  bAll.onclick = ()=>{ mlist(M.src).forEach(v=> add(v, true)); draw(); };
-  const bClr = el("button","btn","ล้างรายการที่เลือก");
-  bClr.onclick = ()=>{ chosen.clear(); expanded.clear(); draw(); };
-  quick.append(bAll, bClr);
+  const bAll = byDate ? null : el("button","btn","เลือกทั้งหมด");
+  if(bAll){
+    bAll.onclick = ()=>{ rosterShown().filter(v=> !had.has(v)).forEach(v=> add(v, true)); draw(); };
+    quick.appendChild(bAll);
+  }
+  const bGood = el("button","btn", `ติ๊ก “${good}” ให้ทุก${unit}ที่เลือก`);
+  bGood.onclick = ()=>{
+    if(!chosen.size){ toast("ยังไม่ได้เลือก"+unit); return; }
+    chosen.forEach(o=> items.forEach(i=> o[i.k] = good));
+    draw();
+  };
+  const bClr = el("button","btn","ล้างที่เลือก");
+  bClr.onclick = ()=>{ chosen.clear(); extra.clear(); expanded.clear(); draw(); };
+  quick.append(bGood, bClr);
   b2.appendChild(quick);
 
-  const pick = el("div","pickbox");
-  const inp = el("input"); inp.type="text"; inp.placeholder = M.addLabel || "พิมพ์เพื่อค้นหา";
-  inp.setAttribute("list","dl_"+M.src);
-  {
-    let dl = document.getElementById("dl_"+M.src);
-    if(!dl){ dl = el("datalist"); dl.id = "dl_"+M.src; document.body.appendChild(dl); }
-    dl.innerHTML = mlist(M.src).map(v=>`<option value="${esc(v)}">`).join("");   /* เติมใหม่ทุกครั้ง เผื่อเพิ่งเพิ่มรายชื่อ */
-  }
-  const bAdd = el("button","btn primary","+ เพิ่ม");
-  const addTyped = ()=>{
-    const v = inp.value.trim();
-    if(!v) return;
-    add(v, true); inp.value = ""; inp.focus(); draw();
-  };
-  bAdd.onclick = addTyped;
-  inp.onkeydown = e=>{ if(e.key==="Enter"){ e.preventDefault(); addTyped(); } };
-  pick.append(inp, bAdd);
-  b2.appendChild(pick);
-
-  const freq = frequentValues(f.id, M.field, 14);
-  if(freq.length){
-    b2.appendChild(el("div","count-note","ใช้บ่อย — แตะเพื่อเพิ่ม/เอาออก"));
-    const chips = el("div","chips");
-    freq.forEach(v=>{
-      const c = el("button","chip", esc(v));
-      c.dataset.v = v;
-      c.onclick = ()=>{ chosen.has(v) ? remove(v) : add(v, true); draw(); };
-      chips.appendChild(c);
+  /* ---- ตัวเลือกวัน (ฟอร์มที่หนึ่งใบ = หนึ่งวัน) ---- */
+  if(byDate){
+    const dtools = el("div","quickbar");
+    const miss = missingDays(f, thisMonth());
+    if(miss.length){
+      const bm = el("button","btn primary", `+ วันที่ยังไม่ได้บันทึกในเดือนนี้ (${miss.length} วัน)`);
+      bm.onclick = ()=>{ miss.forEach(d=> add(d, true)); draw(); };
+      dtools.appendChild(bm);
+    }
+    [["+ วันนี้",0],["+ เมื่อวาน",1]].forEach(([lb,back])=>{
+      const b = el("button","btn", lb);
+      b.onclick = ()=>{ add(daysAgoISO(back), true); draw(); };
+      dtools.appendChild(b);
     });
-    b2.appendChild(chips);
-    b2._chips = chips;
+    b2.appendChild(dtools);
+
+    const rg = el("div","pickbox");
+    const d1 = el("input"); d1.type="date"; d1.value = thisMonth()+"-01";
+    const d2 = el("input"); d2.type="date"; d2.value = todayISO();
+    const wd = el("label","inlinechk"); const wdc = el("input"); wdc.type="checkbox"; wdc.checked = true;
+    wd.append(wdc, document.createTextNode("เฉพาะวันจันทร์–ศุกร์"));
+    const bRg = el("button","btn primary","+ เพิ่มช่วงวันที่นี้");
+    bRg.onclick = ()=>{
+      const list = dateRange(d1.value, d2.value, wdc.checked).filter(d=> !had.has(d));
+      if(!list.length){ toast("ไม่มีวันใหม่ในช่วงนี้ — บันทึกไว้แล้วทั้งหมด"); return; }
+      if(list.length > 60){ alert("ช่วงวันที่ยาวเกินไป ("+list.length+" วัน) — กรุณาเลือกไม่เกิน 60 วันต่อครั้ง"); return; }
+      list.forEach(d=> add(d, true)); draw();
+    };
+    rg.append(el("span","mu sm2","ตั้งแต่"), d1, el("span","mu sm2","ถึง"), d2, wd, bRg);
+    b2.appendChild(rg);
+    b2.appendChild(el("div","count-note","วันที่บันทึกไว้แล้วจะไม่ถูกเพิ่มซ้ำให้อัตโนมัติ · ทุกวันตั้งต้นเป็น “"+good+"” ทุกข้อ กดแก้รายข้อเฉพาะวันที่พบสิ่งผิดปกติ"));
+  }
+
+  /* ---- ค้นหา + ตัวกรอง + รายชื่อทั้งหมดให้ติ๊ก ---- */
+  let roster = null;
+  if(!byDate){
+    const pick = el("div","pickbox");
+    const inp = el("input"); inp.type="text"; inp.placeholder = M.addLabel || "พิมพ์เพื่อค้นหา";
+    inp.oninput = ()=>{ q = inp.value.trim(); drawRoster(); };
+    pick.appendChild(inp);
+    if(M.freeText !== false){
+      const bAdd = el("button","btn", M.addBtn || "+ เพิ่มชื่อที่พิมพ์");
+      const addTyped = ()=>{
+        const v = inp.value.trim();
+        if(!v) return;
+        add(v, true); inp.value = ""; q = ""; inp.focus(); draw();
+      };
+      bAdd.onclick = addTyped;
+      inp.onkeydown = e=>{ if(e.key==="Enter"){ e.preventDefault(); addTyped(); } };
+      pick.appendChild(bAdd);
+    }
+    b2.appendChild(pick);
+
+    if(M.filters){
+      const fc = el("div","chips");
+      M.filters.forEach(([v,lb])=>{
+        const c = el("button","chip", esc(lb));
+        c.dataset.v = v;
+        c.onclick = ()=>{ kind = v; drawRoster(); };
+        fc.appendChild(c);
+      });
+      b2.appendChild(fc);
+      b2._fchips = fc;
+    }
+
+    b2.appendChild(el("div","count-note","แตะชื่อเพื่อเลือก/เอาออก — ที่เลือกไว้จะไปอยู่ด้านล่างให้กรอกผล"));
+    roster = el("div","roster");
+    b2.appendChild(roster);
   }
 
   const listWrap = el("div"); listWrap.style.marginTop = "14px";
@@ -3015,36 +3170,91 @@ function viewMulti(app){
 
   draw();
 
+  /* ---------- ข้อมูล ---------- */
+  function onBaseChange(){
+    had = recordedOn(f, base.date);
+    if(b1._dchips) b1._dchips.querySelectorAll(".chip").forEach(c=> c.classList.toggle("on", c.dataset.iso===base.date));
+    draw();
+  }
+  function rosterAll(){ return multiValues(f).map(String); }
+  function rosterShown(){
+    const s = q.toLowerCase();
+    return rosterAll().filter(v=>
+      (!kind || !M.filterOf || M.filterOf(v) === kind) &&
+      (!s || (v + " " + multiLabel(f,v) + " " + multiSub(f,v)).toLowerCase().includes(s)));
+  }
   function add(v, prefill){
     if(chosen.has(v)) return;
     const o = {};
-    if(prefill && M.mode==="list") items.forEach(i=> o[i.k] = good);   /* รถ: ตั้งต้นผ่านทั้งหมด แก้เฉพาะที่ไม่ผ่าน */
+    if(prefill) items.forEach(i=> o[i.k] = good);   /* ตั้งต้นผ่านทั้งหมด แก้เฉพาะที่ไม่ผ่าน */
     chosen.set(v, o);
   }
-  function remove(v){ chosen.delete(v); expanded.delete(v); }
+  function remove(v){ chosen.delete(v); extra.delete(v); expanded.delete(v); }
   function statusOf(o){
-    const done = items.filter(i=> o[i.k]!==undefined && o[i.k]!=="").length;
+    const filled = items.filter(i=> o[i.k]!==undefined && o[i.k]!=="");
     const bad = items.filter(i=> f.scale.some(s=> String(s.v)===String(o[i.k]) && s.good===0));
-    return {done, total:items.length, bad:bad.map(i=>i.k)};
+    const mid = items.filter(i=> f.scale.some(s=> String(s.v)===String(o[i.k]) && s.good===2));
+    return {done:filled.length, total:items.length, bad:bad.map(i=>i.k), mid:mid.length};
   }
+  /* ป้ายสถานะของแถว — ฟอร์มที่คิดคะแนนบอกคะแนนจริง ฟอร์มติ๊กผ่าน/ไม่ผ่านบอกจำนวนข้อ */
+  function statusPill(o){
+    const st = statusOf(o);
+    if(f.scoring && st.done === st.total){
+      const sc = scoreOf(f, {items:o});
+      return {cls: sc.pass ? (st.mid ? "warn" : "ok") : "ng",
+              tx: sc.sum+"/"+sc.max+" · "+sc.pct+"% · "+sc.result,
+              bad: !sc.pass, warn: sc.pass && !!st.mid};
+    }
+    return {cls: st.bad.length ? "ng" : st.done===st.total ? "ok" : "warn",
+            tx: st.bad.length ? `ไม่ผ่าน ${st.bad.length} ข้อ (${st.bad.join(", ")})`
+              : st.done===st.total ? `ผ่านครบ ${st.total} ข้อ` : `กรอกแล้ว ${st.done}/${st.total}`,
+            bad: !!st.bad.length, warn: false};
+  }
+  function rowCls(sp, st){ return sp.bad ? " bad" : sp.warn ? "" : st.done===st.total ? " done" : ""; }
   function updateCount(){
     saveB.textContent = chosen.size ? `บันทึกทั้งหมด (${chosen.size} ${unit})` : "บันทึกทั้งหมด";
-    if(b2._chips) b2._chips.querySelectorAll(".chip").forEach(c=> c.classList.toggle("on", chosen.has(c.dataset.v)));
+  }
+
+  /* ---------- วาดหน้าจอ ---------- */
+  function drawRoster(){
+    if(!roster) return;
+    if(b2._fchips) b2._fchips.querySelectorAll(".chip").forEach(c=> c.classList.toggle("on", c.dataset.v===kind));
+    const list = rosterShown();
+    bAll.textContent = `เลือกทั้งหมด (${list.filter(v=> !had.has(v)).length} ${unit})`;
+    roster.innerHTML = "";
+    if(!list.length){ roster.appendChild(el("div","empty","ไม่พบตามคำค้น")); return; }
+    list.forEach(v=>{
+      const on = chosen.has(v), did = had.has(v);
+      const lb = el("label","rs" + (on? " on":"") + (did? " did":""));
+      const cb = el("input"); cb.type="checkbox"; cb.checked = on;
+      cb.onchange = ()=>{ cb.checked ? add(v, true) : remove(v); draw(); };
+      const tx = el("span","rstx", `<b>${esc(multiLabel(f,v))}</b>`
+        + (multiSub(f,v) ? `<small>${esc(multiSub(f,v))}</small>` : "")
+        + (did ? `<small class="didtx">บันทึกวันนี้แล้ว</small>` : ""));
+      lb.append(cb, tx);
+      roster.appendChild(lb);
+    });
   }
 
   function draw(){
     updateCount();
+    drawRoster();
     listWrap.innerHTML = "";
     if(!chosen.size){
-      listWrap.appendChild(el("div","empty", `ยังไม่ได้เลือก${unit} — กดปุ่มด้านบน หรือพิมพ์เพิ่มทีละ${unit}`));
+      listWrap.appendChild(el("div","empty", byDate
+        ? "ยังไม่ได้เลือกวัน — กดปุ่มด้านบนเพื่อเพิ่มวันที่ต้องการบันทึก"
+        : `ยังไม่ได้เลือก${unit} — ติ๊กจากรายชื่อด้านบน หรือกด “เลือกทั้งหมด”`));
       return;
     }
+    listWrap.appendChild(el("div","count-note",
+      `เลือกไว้ ${chosen.size} ${unit} — ตรวจดูแถวที่เป็นสีแดงก่อนบันทึก`));
     if(M.mode === "grid") return drawGrid();
     [...chosen.keys()].forEach(name=>{
-      const o = chosen.get(name), st = statusOf(o);
-      const row = el("div","mrow" + (st.bad.length? " bad" : st.done===st.total? " done" : ""));
+      const o = chosen.get(name), sp = statusPill(o), st = statusOf(o);
+      const row = el("div","mrow" + rowCls(sp, st));
       const head = el("div","head");
-      head.appendChild(el("div","name", esc(name)));
+      head.appendChild(el("div","name", esc(byDate ? thDate(name) : multiLabel(f,name))
+        + (multiSub(f,name) ? `<div class="mu sm2" style="font-weight:600;margin-top:3px">${esc(multiSub(f,name))}</div>` : "")));
       if(deriveKey){
         const dv = deriveOf(name);
         if(dv){
@@ -3062,9 +3272,7 @@ function viewMulti(app){
           head.appendChild(sel);
         }
       }
-      head.appendChild(el("span", "pill stpill " + (st.bad.length? "ng" : st.done===st.total? "ok":"warn"),
-        st.bad.length ? `ไม่ผ่าน ${st.bad.length} ข้อ (${st.bad.join(", ")})`
-        : st.done===st.total ? `ผ่านครบ ${st.total} ข้อ` : `กรอกแล้ว ${st.done}/${st.total}`));
+      head.appendChild(el("span", "pill stpill " + sp.cls, sp.tx));
       const bOk = el("button","btn sm", `ผ่านทั้งหมด (${good})`);
       bOk.onclick = ()=>{ items.forEach(i=> o[i.k]=good); draw(); };
       const bEx = el("button","btn sm", expanded.has(name) ? "ซ่อนรายข้อ ▲" : "แก้รายข้อ ▼");
@@ -3078,14 +3286,20 @@ function viewMulti(app){
         f.groups.forEach(g=>{
           body.appendChild(el("div","grp", esc(g.t)));
           g.items.forEach(it=> body.appendChild(choiceRow(f, it, {items:o}, ()=>{
-            const s2 = statusOf(o);
-            row.className = "mrow" + (s2.bad.length? " bad" : s2.done===s2.total? " done":"");
+            const s2 = statusPill(o), q2 = statusOf(o);
+            row.className = "mrow" + rowCls(s2, q2);
             const stp = head.querySelector(".stpill");
-            stp.className = "pill stpill " + (s2.bad.length? "ng" : s2.done===s2.total? "ok":"warn");
-            stp.textContent = s2.bad.length ? `ไม่ผ่าน ${s2.bad.length} ข้อ (${s2.bad.join(", ")})`
-              : s2.done===s2.total ? `ผ่านครบ ${s2.total} ข้อ` : `กรอกแล้ว ${s2.done}/${s2.total}`;
+            stp.className = "pill stpill " + s2.cls;
+            stp.textContent = s2.tx;
           })));
         });
+        if(notes.length){
+          const ex = extra.get(name) || {};
+          extra.set(name, ex);
+          const nf = el("div","fields");
+          notes.forEach(fd=> nf.appendChild(fieldNode(fd, ex, ()=>{})));
+          body.appendChild(nf);
+        }
         row.appendChild(body);
       }
       listWrap.appendChild(row);
@@ -3095,15 +3309,19 @@ function viewMulti(app){
   function drawGrid(){
     const wrap = el("div","tablewrap");
     let h = `<table class="multi"><thead><tr><th style="text-align:left">${esc(f.rowLabelText||"รายการ")}</th>`
-      + items.map(i=>`<th>${esc(i.t)}</th>`).join("") + `<th>ทั้งแถว</th><th></th></tr></thead><tbody>`;
+      + items.map(i=>`<th><div>${esc(i.t)}</div><button class="btn sm" data-col="${esc(i.k)}">${esc(good)} ทั้งคอลัมน์</button></th>`).join("")
+      + notes.map(fd=>`<th>${esc(fd.label)}</th>`).join("")
+      + `<th>ทั้งแถว</th><th></th></tr></thead><tbody>`;
     [...chosen.keys()].forEach(name=>{
       const o = chosen.get(name);
-      h += `<tr><td>${esc(name)}</td>` + items.map(i=>{
+      h += `<tr><td>${esc(byDate ? thDate(name) : multiLabel(f,name))}</td>` + items.map(i=>{
         const v = o[i.k]||"";
         return `<td style="text-align:center">` + f.scale.map(s=>
           `<button class="choice ${String(v)===String(s.v)?"on":""}" data-good="${s.good}" data-n="${esc(name)}" data-i="${esc(i.k)}" data-v="${esc(s.v)}" style="min-width:42px;padding:8px 9px">${esc(s.v)}</button>`).join(" ")
           + `</td>`;
       }).join("")
+      + notes.map(fd=>{ const ex = extra.get(name) || {};
+          return `<td><input class="gnote" data-n="${esc(name)}" data-k="${esc(fd.k)}" value="${esc(ex[fd.k]||"")}" placeholder="${esc(fd.label)}"></td>`; }).join("")
       + `<td><button class="btn sm" data-all="${esc(name)}">${esc(good)} ทั้งแถว</button></td>`
       + `<td><button class="btn sm danger" data-rm="${esc(name)}">เอาออก</button></td></tr>`;
     });
@@ -3120,12 +3338,22 @@ function viewMulti(app){
       items.forEach(i=> o[i.k] = good);
       draw();
     });
+    wrap.querySelectorAll("button[data-col]").forEach(b=> b.onclick = ()=>{
+      chosen.forEach(o=> o[b.dataset.col] = good);
+      draw();
+    });
+    wrap.querySelectorAll("input.gnote").forEach(i=> i.oninput = ()=>{
+      const ex = extra.get(i.dataset.n) || {};
+      ex[i.dataset.k] = i.value;
+      extra.set(i.dataset.n, ex);
+    });
     wrap.querySelectorAll("button[data-rm]").forEach(b=> b.onclick = ()=>{ remove(b.dataset.rm); draw(); });
   }
 
+  /* ---------- บันทึก ---------- */
   function commitAll(){
     if(!chosen.size){ alert("ยังไม่ได้เลือก"+unit); return; }
-    for(const fd of f.header.filter(x=> x.k!==M.field && !(M.derive||[]).includes(x.k))){
+    for(const fd of f.header.filter(x=> !skip.includes(x.k))){
       if(fd.req && !base[fd.k]){ alert("กรุณากรอก: "+fd.label); return; }
     }
     if(deriveKey){
@@ -3135,10 +3363,16 @@ function viewMulti(app){
         return;
       }
     }
+    const dup = [...chosen.keys()].filter(k=> had.has(k));
+    if(dup.length){
+      const show = dup.slice(0,5).map(k=> byDate ? thDate(k) : multiLabel(f,k)).join(", ");
+      if(!confirm(`มี ${dup.length} ${unit}ที่บันทึกไว้แล้ว (${show}${dup.length>5?" …":""})\n\nจะบันทึกซ้ำอีกใบใช่ไหม?`)) return;
+    }
     const empty = [...chosen.keys()].filter(k=> statusOf(chosen.get(k)).done===0);
     if(empty.length){
       if(empty.length === chosen.size){ alert("ยังไม่ได้กรอกผลตรวจเลยสักรายการ"); return; }
-      if(!confirm(`มี ${empty.length} ${unit}ที่ยังไม่ได้กรอกผลตรวจ (${empty.slice(0,4).join(", ")}${empty.length>4?" …":""})\nจะบันทึกเฉพาะรายการที่กรอกแล้วใช่ไหม?`)) return;
+      const show = empty.slice(0,4).map(k=> byDate ? thDate(k) : multiLabel(f,k)).join(", ");
+      if(!confirm(`มี ${empty.length} ${unit}ที่ยังไม่ได้กรอกผลตรวจ (${show}${empty.length>4?" …":""})\nจะบันทึกเฉพาะรายการที่กรอกแล้วใช่ไหม?`)) return;
     }
     f.header.concat(f.footer).forEach(fd=>{ if(fd.remember) DB.prefs[f.id+"."+fd.k] = base[fd.k]; });
     const autoSig = fillMissingSigners(f, base);
@@ -3153,7 +3387,11 @@ function viewMulti(app){
       if(statusOf(its).done === 0) return;
       const r = JSON.parse(JSON.stringify(base));
       r.id = uid(); r.createdAt = Date.now(); r.items = its; r[M.field] = name;
+      if(byDate) r.date = name;
+      if(M.resolve){ const ex = M.resolve(name); if(ex) Object.assign(r, ex); }
       if(deriveKey){ const dv = deriveOf(name); if(dv) r[deriveKey] = dv; }
+      const note = extra.get(name);
+      if(note) notes.forEach(fd=>{ if(note[fd.k]) r[fd.k] = note[fd.k]; });
       if(f.id==="vehicle") learnPlateType(r.plate, r.delivery);
       recs(f.id).push(r); out.push(r);
     });

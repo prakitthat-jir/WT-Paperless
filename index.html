@@ -229,7 +229,14 @@ tbody tr.rowlink:active{background:var(--ac)}
 tbody tr.rowlink td:last-child{white-space:nowrap}
 .rowacts{display:flex;gap:6px;justify-content:flex-end}
 .multi td,.multi th{white-space:nowrap}
-.multi td:first-child{white-space:normal;min-width:170px}
+/* คอลัมน์ชื่อตรึงไว้ซ้ายมือ จะได้รู้เสมอว่ากำลังติ๊กของใคร */
+.multi td:first-child,.multi th:first-child{white-space:normal;min-width:170px;max-width:220px;
+  position:sticky;left:0;z-index:2;background:var(--card);box-shadow:3px 0 6px -3px rgba(15,23,42,.18)}
+.multi thead th:first-child{z-index:4;background:var(--bg2)}
+.multi tbody tr:nth-child(even) td:first-child{background:var(--bg3)}
+.multi tbody tr:hover td:first-child{background:var(--ac);color:var(--pd)}
+/* หัวข้อแต่ละข้อขึ้นสองบรรทัดได้ จะได้ไม่ต้องกว้างเท่าข้อความทั้งประโยค */
+.multi thead th{white-space:normal;max-width:150px;vertical-align:middle}
 .empty{padding:44px 16px;text-align:center;color:var(--mu);font-size:.92rem}
 
 /* ───────── Pills / chips ───────── */
@@ -302,22 +309,49 @@ label.f > span{display:block;font-size:.76rem;font-weight:700;color:var(--mu);ma
 .dchip.full small,.dchip.bad small{color:rgba(255,255,255,.88)}
 .dchip.today{box-shadow:0 0 0 2px rgba(255,106,19,.6)}
 .mwrap{max-height:66vh}
-.mgrid{width:auto;min-width:100%;border-collapse:separate;border-spacing:0;font-size:.82rem}
-.mgrid th,.mgrid td{border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);padding:3px 4px;
+.daytbl{display:table;width:auto;min-width:100%;border-collapse:separate;border-spacing:0;font-size:.82rem}
+.daytbl th,.daytbl td{border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);padding:3px 4px;
   text-align:center;white-space:nowrap;background:var(--card);position:static}
-.mgrid .itm{text-align:left;white-space:normal;min-width:210px;max-width:260px;position:sticky;left:0;z-index:2;
-  background:var(--card);font-size:.84rem;line-height:1.35;border-right:1.5px solid var(--bd2)}
-.mgrid thead th{position:sticky;top:0;z-index:3;background:var(--bg3);color:var(--tx2);font-weight:800}
-.mgrid thead th.itm{z-index:4;background:var(--bg3)}
-.mgrid tr.sec td{background:var(--ac);color:var(--pd);font-weight:800;text-align:left;font-size:.88rem}
-.mgrid tr.gt td{background:var(--bg2);font-weight:700;text-align:left}
-.mgrid .dh{cursor:pointer;user-select:none;min-width:29px;font-size:.8rem}
-.mgrid .dh:hover{background:var(--ac);color:var(--pd)}
-.mgrid .cell{cursor:pointer;min-width:29px;font-weight:800;color:var(--mu2);user-select:none}
-.mgrid .cell:hover{outline:2px solid var(--p);outline-offset:-2px}
-.mgrid .cell.ok{background:#e9f9f0;color:#047857}
-.mgrid .cell.ng{background:#fee2e2;color:#b91c1c}
-@media(max-width:700px){ .mgrid .itm{min-width:150px;font-size:.78rem} .mwrap{max-height:60vh} }
+/* คอลัมน์ชื่อรายการตรึงไว้ซ้ายมือ พร้อมเส้นเงาให้เห็นว่ากำลังเลื่อนตารางอยู่ */
+.daytbl .itm{text-align:left;white-space:normal;min-width:212px;max-width:260px;position:sticky;left:0;z-index:2;
+  background:var(--card);font-size:.84rem;line-height:1.35;border-right:1.5px solid var(--bd2);
+  box-shadow:3px 0 6px -3px rgba(15,23,42,.18)}
+.daytbl thead th{position:sticky;top:0;z-index:3;background:var(--bg3);color:var(--tx2);font-weight:800}
+.daytbl thead th.itm{z-index:4;background:var(--bg3)}
+/* แถวหัวข้อกินทั้งแถว ไม่ต้องตรึงกล่อง แต่ตรึง "ตัวข้อความ" ไว้ที่ขอบซ้าย
+   จะได้รู้ว่ากำลังดูหมวดไหนอยู่แม้เลื่อนไปสุดขวา */
+.daytbl tr.sec td,.daytbl tr.gt td{text-align:left;white-space:nowrap;position:static;
+  min-width:0;max-width:none;box-shadow:none;border-right:0}
+.daytbl tr.sec td{background:var(--ac);color:var(--pd);font-weight:800;font-size:.88rem}
+.daytbl tr.gt td{background:var(--bg2);font-weight:700}
+.daytbl .stick{position:sticky;left:5px;display:inline-block;max-width:calc(100vw - 60px)}
+.daytbl .dh{cursor:pointer;user-select:none;font-size:.8rem}
+.daytbl .dh:hover{background:var(--ac);color:var(--pd)}
+.daytbl .cell{cursor:pointer;font-weight:800;color:var(--mu2);user-select:none}
+.daytbl .cell:hover{outline:2px solid var(--p);outline-offset:-2px}
+.daytbl .cell.ok{background:#e9f9f0;color:#047857}
+.daytbl .cell.ng{background:#fee2e2;color:#b91c1c}
+/* ช่องกดให้นิ้วแตะถูก — ของเดิม 29x25px เล็กไปสำหรับมือถือ */
+.daytbl .cell,.daytbl .dh{min-width:34px;height:33px}
+/* แถวสลับสี + ไฮไลต์ทั้งแถวตอนชี้ ช่วยไล่สายตาข้าม 31 ช่องโดยไม่หลงแถว */
+.daytbl tbody tr:nth-child(even) .itm{background:var(--bg3)}
+.daytbl tbody tr:hover td{background:var(--hov)}
+.daytbl tbody tr:hover .itm{background:var(--ac);color:var(--pd)}
+.daytbl tbody tr.sec:hover td{background:var(--ac)}
+.daytbl tbody tr.gt:hover td{background:var(--bg2)}
+/* เสาร์-อาทิตย์จางลง จะได้กะวันถูกโดยไม่ต้องไล่นับตัวเลข */
+.daytbl .wk{background:var(--bg2)}
+.daytbl thead th.wk{color:var(--mu2)}
+.daytbl tbody tr:nth-child(even) td.wk{background:#e9edf2}
+.daytbl tbody tr:hover td.wk{background:var(--hov)}
+/* คอลัมน์ของวันนี้ */
+.daytbl thead th.tod{background:var(--t-o);color:var(--t-oT);box-shadow:inset 0 2px 0 var(--s)}
+.daytbl td.tod{box-shadow:inset 2px 0 0 rgba(255,106,19,.45),inset -2px 0 0 rgba(255,106,19,.45)}
+@media(max-width:700px){
+  .daytbl .itm{min-width:140px;max-width:155px;font-size:.76rem}
+  .daytbl .cell,.daytbl .dh{min-width:31px;height:36px}
+  .mwrap{max-height:none}
+}
 
 /* ───────── Batch rows ───────── */
 .mrow{border:1px solid var(--bd);border-radius:12px;margin-bottom:10px;overflow:hidden;background:var(--card);
@@ -4839,19 +4873,24 @@ function viewMonthForm(app){
 
   /* ตารางเต็ม รายการ x วัน */
   const wrap = el("div","tablewrap mwrap"); wrap.style.marginTop = "12px";
-  let html = '<table class="mgrid"><thead><tr><th class="itm">รายการตรวจสอบ</th>'
-    + days.map(d=> '<th class="dh" data-day="' + d + '" title="ติ๊กปกติทั้งวันที่ ' + d + '">' + d + '</th>').join("")
+  /* เสาร์-อาทิตย์ กับวันนี้ ติดคลาสไว้ให้ไล่สายตาง่ายตอนเลื่อนตาราง 31 คอลัมน์ */
+  const dayCls = d=>{
+    const w = new Date(rec.month + "-" + String(d).padStart(2,"0") + "T00:00:00").getDay();
+    return (w === 0 || w === 6 ? " wk" : "") + (d === todayD ? " tod" : "");
+  };
+  let html = '<table class="daytbl"><thead><tr><th class="itm">รายการตรวจสอบ</th>'
+    + days.map(d=> '<th class="dh' + dayCls(d) + '" data-day="' + d + '" title="ติ๊กปกติทั้งวันที่ ' + d + '">' + d + '</th>').join("")
     + '</tr></thead><tbody>';
   let lastSec = null;
   f.groups.forEach(g=>{
     if(g.sec !== lastSec){
       lastSec = g.sec;
-      html += '<tr class="sec"><td class="itm" colspan="' + (nDays+1) + '">' + esc(g.sec) + '</td></tr>';
+      html += '<tr class="sec"><td colspan="' + (nDays+1) + '"><span class="stick">' + esc(g.sec) + '</span></td></tr>';
     }
-    if(g.t) html += '<tr class="gt"><td class="itm" colspan="' + (nDays+1) + '">' + esc((g.n ? g.n + ". " : "") + g.t) + '</td></tr>';
+    if(g.t) html += '<tr class="gt"><td colspan="' + (nDays+1) + '"><span class="stick">' + esc((g.n ? g.n + ". " : "") + g.t) + '</span></td></tr>';
     g.items.forEach(i=>{
       html += '<tr><td class="itm">' + esc(i.t) + '</td>'
-        + days.map(d=> '<td class="cell" data-k="' + esc(i.k) + '" data-d="' + d + '"></td>').join("") + '</tr>';
+        + days.map(d=> '<td class="cell' + dayCls(d) + '" data-k="' + esc(i.k) + '" data-d="' + d + '"></td>').join("") + '</tr>';
     });
   });
   html += '</tbody></table>';
@@ -4924,7 +4963,7 @@ function viewMonthForm(app){
   function paintCell(td){
     const v = dayVal(rec, td.dataset.k, +td.dataset.d);
     td.textContent = v;
-    td.className = "cell" + (v === GOOD ? " ok" : v === BAD ? " ng" : "");
+    td.className = "cell" + dayCls(+td.dataset.d) + (v === GOOD ? " ok" : v === BAD ? " ng" : "");
   }
   function paintCol(d){ tbl.querySelectorAll('.cell[data-d="' + d + '"]').forEach(paintCell); }
   function paintAll(){

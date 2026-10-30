@@ -1082,6 +1082,15 @@ let RETRY_TIMER = null, RETRY_BUSY = false;   /* ลองต่อเครื�
 function stopRetry(){ if(RETRY_TIMER){ clearInterval(RETRY_TIMER); RETRY_TIMER = null; } }
 function startRetry(){
   if(RETRY_TIMER) return;
+  /* ครั้งแรกลองใหม่ให้ไว (4 วิ) ครอบช่วงที่ GitHub Pages ยัง build ไม่เสร็จ
+     จากนั้นค่อยลองทุก 15 วิตามเดิม */
+  setTimeout(async ()=>{
+    if(AUTH_GATE !== "connect" || RETRY_BUSY || document.hidden) return;
+    RETRY_BUSY = true;
+    try{ await bootConnect(); }catch(e){}
+    RETRY_BUSY = false;
+    if(AUTH_GATE !== "connect"){ stopRetry(); render(); }
+  }, 4000);
   RETRY_TIMER = setInterval(async ()=>{
     if(AUTH_GATE !== "connect"){ stopRetry(); return; }
     if(RETRY_BUSY || document.hidden) return;
@@ -1093,23 +1102,56 @@ function startRetry(){
 }           /* ข้อความอธิบายว่าทำไมต่อไม่ได้ */
 let OFFLINE_OK = false;      /* ผู้ใช้เลือก "ใช้งานแบบออฟไลน์" แล้ว */
 /* ลองทักเซิร์ฟเวอร์ที่ที่อยู่หนึ่ง — คืน object ถ้าใช่, null ถ้าไม่ใช่ */
-function probeBase(base){
+/* ยิง api/ping จริงเสมอ (ห้ามเดาจากชื่อโดเมน) แต่ต้องมีเวลาจำกัด
+   ไม่งั้นที่อยู่อุโมงค์ที่ตายแล้วจะค้างรอจนหมดเวลาของเครือข่าย ซึ่งบนมือถืออาจเป็นนาที */
+const PROBE_MS = 4500;
+function probeBase(base, ms){
   const h = CONN.token ? {Authorization:"Bearer " + CONN.token} : {};
-  return fetch((base || "") + "api/ping", {headers:h})
+  let opt = {headers:h}, timer = 0;
+  if(typeof AbortController === "function"){
+    const ac = new AbortController();
+    opt.signal = ac.signal;
+    timer = setTimeout(()=>{ try{ ac.abort(); }catch(e){} }, ms || PROBE_MS);
+  }
+  return fetch((base || "") + "api/ping", opt)
     .then(r=> r.ok ? r.json() : null)
     .then(j=> (j && j.ok && j.mode === "server") ? j : null)
-    .catch(()=> null);
+    .catch(()=> null)
+    .then(v=>{ if(timer) clearTimeout(timer); return v; });
 }
 function apiBase(){ return CONN.api || ""; }
 /* ถามที่อยู่เครื่องแม่ล่าสุดจาก api.json ที่วางคู่กับหน้าเว็บนี้ —
    เครื่องแม่เขียนไฟล์นี้ใหม่ทุกครั้งที่เปิดอุโมงค์ มือถือจึงเปิดลิงก์เดิมได้ตลอด */
-function discoverApi(){
-  let u;
-  try{ u = new URL("api.json", location.href).href + "?t=" + Date.now(); }catch(e){ return Promise.resolve(""); }
-  return fetch(u, {cache:"no-store"})
+/* เครื่องแม่ประกาศที่อยู่ล่าสุดไว้ใน api.json ซึ่งอ่านได้สองทาง:
+   - คู่กับหน้าเว็บ (GitHub Pages) — ต้องรอ build ประมาณหนึ่งนาทีหลัง push
+   - raw.githubusercontent — เห็นทันทีที่ push ไม่ต้องรอ build
+   อ่านพร้อมกันทั้งคู่แล้วเลือกอันที่ประกาศล่าสุด จะได้ไม่ต้องรอ Pages */
+function apiJsonUrls(){
+  const out = [];
+  try{ out.push(new URL("api.json", location.href).href); }catch(e){}
+  try{
+    const own = location.hostname.match(/^([a-z0-9-]+)\.github\.io$/i);
+    const seg = location.pathname.split("/").filter(Boolean)[0];
+    if(own && seg) out.push("https://raw.githubusercontent.com/" + own[1] + "/" + seg + "/main/api.json");
+  }catch(e){}
+  return out;
+}
+function readApiJson(u){
+  const q = u + (u.indexOf("?") >= 0 ? "&" : "?") + "t=" + Date.now();
+  return fetch(q, {cache:"no-store"})
     .then(r=> r.ok ? r.json() : null)
-    .then(j=> (j && typeof j.api === "string") ? j.api : "")
-    .catch(()=> "");
+    .then(j=> (j && typeof j.api === "string" && j.api) ? {api:j.api, at:String(j.updated || "")} : null)
+    .catch(()=> null);
+}
+function discoverApi(){
+  const urls = apiJsonUrls();
+  if(!urls.length) return Promise.resolve("");
+  return Promise.all(urls.map(readApiJson)).then(list=>{
+    const got = list.filter(Boolean);
+    if(!got.length) return "";
+    got.sort((a,b)=> String(b.at).localeCompare(String(a.at)));   /* ประกาศล่าสุดมาก่อน */
+    return got[0].api;
+  }).catch(()=> "");
 }
 /* รูปลายเซ็นเก็บเป็น path ญาติของเครื่องแม่ — เวลาเปิดจาก GitHub Pages ต้องชี้กลับไปที่เครื่องแม่
    และแนบโทเคนไปด้วย เพราะ <img> ส่ง header Authorization ไม่ได้ */
@@ -1181,24 +1223,32 @@ async function bootConnect(){
   registerSW();
   CONN_ERR = "";
 
-  /* หาเซิร์ฟเวอร์: ใช้ที่อยู่ที่ตั้งไว้ก่อน ถ้าไม่มีค่อยลอง origin ของหน้าเว็บนี้เอง */
+  /* หาเซิร์ฟเวอร์: ยิงที่อยู่ที่จำไว้ "พร้อมกับ" ไปถามที่อยู่ล่าสุดเลย
+     ของเดิมถามต่อเมื่อ probe ล้มแล้ว ทำให้เสียเวลาไปหนึ่งรอบทุกครั้งที่อุโมงค์เปลี่ยนชื่อ */
+  const remembered = CONN.api || "";
+  let announced = "";
   let p = null;
-  if(CONN.api){
-    p = await probeBase(CONN.api);
+  if(remembered){
+    const both = await Promise.all([probeBase(remembered), discoverApi()]);
+    p = both[0]; announced = both[1] || "";
   } else {
-    p = await probeBase("");
+    p = await probeBase("");                /* เปิดจากเครื่องแม่เอง/ในวง LAN */
+    if(!p) announced = await discoverApi();
   }
-  /* ที่อยู่ที่จำไว้ใช้ไม่ได้แล้ว (เครื่องแม่เปิดใหม่ = อุโมงค์เปลี่ยนชื่อ) —
-     ไปถามที่อยู่ล่าสุดจากหน้าเว็บถาวร แล้วต่อใหม่ให้เอง */
+  /* ที่อยู่ที่จำไว้ใช้ไม่ได้แล้ว (เครื่องแม่เปิดใหม่ = อุโมงค์เปลี่ยนชื่อ) — ต่อที่อยู่ใหม่ให้เอง */
+  const useAnnounced = async u=>{
+    if(!u) return null;
+    const clean = u.replace(/\/*$/, "") + "/";
+    if(clean === CONN.api) return null;
+    setApiBase(u, true);                    /* เครื่องแม่เครื่องเดิม → เก็บรหัสที่เคยใส่ไว้ */
+    return await probeBase(CONN.api);
+  };
+  if(!p) p = await useAnnounced(announced);
+  /* เพิ่งรีสตาร์ตเครื่องแม่ ที่อยู่ใหม่อาจยังประกาศไม่ถึง — รออีกนิดแล้วถามซ้ำหนึ่งครั้ง
+     ถูกกว่าการเด้งหน้า "เชื่อมต่อไม่ได้" ใส่หน้าผู้ใช้แล้วค่อยหายไปเอง */
   if(!p){
-    const found = await discoverApi();
-    if(found){
-      const clean = found.replace(/\/*$/, "") + "/";
-      if(clean !== CONN.api){
-        setApiBase(found, true);            /* เครื่องแม่เครื่องเดิม → เก็บรหัสที่เคยใส่ไว้ */
-        p = await probeBase(CONN.api);
-      }
-    }
+    await new Promise(r=> setTimeout(r, 1200));
+    p = await useAnnounced(await discoverApi());
   }
   if(!p && CONN.api) CONN_ERR = "เชื่อมต่อกับเครื่องแม่ไม่ได้ — เครื่องแม่อาจปิดอยู่ หรือยังไม่ได้เปิดโปรแกรม";
   if(!p){

@@ -41,6 +41,18 @@ function personalProbes(){
   (b.master.plates || []).slice(0, 20).forEach((x,i)=> push("ทะเบียน#" + (i+1), x));
   return out;
 }
+/* รหัสเข้าใช้งาน / secret ของโทเคน ต้องไม่โผล่ในไฟล์ที่ขึ้น GitHub เด็ดขาด
+   (Config.json ไม่ได้ขึ้น repo อยู่แล้ว แต่ค่าในนั้นอาจถูกก๊อปไปแปะในโค้ดโดยไม่ตั้งใจ) */
+function secretProbes(){
+  const p = path.join(SRC, "WT-Paperless-Config.json");
+  if(!fs.existsSync(p)) return [];
+  let c;
+  try{ c = JSON.parse(fs.readFileSync(p, "utf8")); }catch(e){ return []; }
+  const out = [];
+  if(c.accessCode && String(c.accessCode).length >= 3) out.push(["รหัสเข้าใช้งาน", String(c.accessCode)]);
+  if(c.secret && String(c.secret).length >= 8)         out.push(["secret ของโทเคน", String(c.secret)]);
+  return out;
+}
 function scan(dir, probes){
   const hits = [];
   const walk = d =>{
@@ -101,3 +113,20 @@ console.log("   ✓ ไม่พบชื่อ / ที่อยู่ / เบ
 const total = (function size(d){ let n=0; for(const f of fs.readdirSync(d)){ if(f===".git")continue;
   const p=path.join(d,f), st=fs.statSync(p); n += st.isDirectory()? size(p) : st.size; } return n; })(REPO);
 console.log("   ขนาด repo รวม " + (total/1024).toFixed(0) + " KB");
+
+/* ─────────────────────────────────────────────────────────────
+   ยามตัวที่สอง — รหัสเข้าใช้งาน / secret
+   ห้ามพิมพ์ค่าจริงออกมา บอกแค่ว่าเจอที่ไฟล์ไหน
+   ───────────────────────────────────────────────────────────── */
+const secrets = secretProbes();
+if(secrets.length){
+  console.log("\n  ตรวจรหัสเข้าใช้งาน / secret ในไฟล์ที่จะเผยแพร่:");
+  const sHits = [...new Set(scan(REPO, secrets).map(h=> String(h).split("  ←")[0].trim()))];
+  if(sHits.length){
+    sHits.forEach(h=> console.log("   ⚠ " + h + "  ← พบค่าลับในไฟล์นี้ (ไม่แสดงค่าจริง)"));
+    console.log("\n   *** ห้าม push เด็ดขาด — GitHub Pages เป็นเว็บสาธารณะ ใครก็อ่านได้ ***");
+    console.log("   เอาค่านี้ออกจากโค้ดก่อน แล้วควรเปลี่ยนรหัสใน WT-Paperless-Config.json ด้วย");
+    process.exit(1);
+  }
+  console.log("   ✓ ไม่พบรหัสเข้าใช้งานหรือ secret ในไฟล์ใด ๆ");
+}

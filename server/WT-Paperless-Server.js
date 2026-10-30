@@ -697,8 +697,71 @@ function startTunnel(onUrl){
   };
   proc.stdout.on("data", scan);
   proc.stderr.on("data", scan);
+  /* โปรเซสจบเอง (ถูกฆ่า/ล้ม) — เปิดใหม่ให้ ยกเว้นกรณีที่เราสั่งปิดเองเพื่อเปิดใหม่อยู่แล้ว */
+  proc.on("exit", ()=>{
+    if(TUNNEL_RESTARTING || TUNNEL !== proc) return;
+    console.log("  ! cloudflared ปิดตัวเอง — กำลังเปิดใหม่…");
+    restartTunnel("โปรเซสปิดตัวเอง");
+  });
   return proc;
 }
+/* ============================================================
+   เฝ้าอุโมงค์ให้ใช้ได้ตลอด
+   อุโมงค์ฟรี (trycloudflare) ถูกยกเลิกได้เองโดยที่ cloudflared ยังรันอยู่เฉย ๆ
+   ถ้าไม่เฝ้า เครื่องแม่จะประกาศที่อยู่ที่ตายแล้วค้างไว้ มือถือก็ต่อไม่ติดทั้งวัน
+   ============================================================ */
+let TUNNEL_ANNOUNCE = null, TUNNEL_WATCH = null, TUNNEL_FAILS = 0, TUNNEL_RESTARTING = false;
+const WATCH_MS = Number(process.env.WT_WATCH_MS || 300000);   /* ตรวจทุก 5 นาที */
+const WATCH_FAILS = 2;                                        /* ล้มติดกัน 2 ครั้งค่อยเปิดใหม่ (กันเน็ตสะดุดชั่วคราว) */
+
+/* อุโมงค์ยังใช้ได้จริงไหม — ยิงผ่านอินเทอร์เน็ตกลับเข้ามาที่ตัวเอง */
+async function tunnelAlive(){
+  if(!PUBLIC_URL) return false;
+  try{
+    const r = await fetch(PUBLIC_URL.replace(/\/*$/, "") + "/api/ping",
+                          {signal: AbortSignal.timeout(12000), headers:{"Cache-Control":"no-store"}});
+    if(!r.ok) return false;
+    const j = await r.json();
+    return !!(j && j.ok && j.mode === "server");
+  }catch(e){ return false; }
+}
+function killTunnel(){
+  const p = TUNNEL;
+  TUNNEL = null;
+  if(!p) return;
+  try{ p.kill(); }catch(e){}
+  /* บน Windows ลูกหลานของ cloudflared อาจไม่ตายตาม — บังคับทั้งต้นไม้ */
+  if(p.pid) try{ execFile("taskkill", ["/PID", String(p.pid), "/T", "/F"], {windowsHide:true}, ()=>{}); }catch(e){}
+}
+async function restartTunnel(why){
+  if(TUNNEL_RESTARTING) return;
+  TUNNEL_RESTARTING = true;
+  console.log("  ! อุโมงค์ใช้ไม่ได้แล้ว (" + why + ") — กำลังเปิดใหม่…");
+  killTunnel();
+  PUBLIC_URL = "";                       /* ต้องล้างก่อน ไม่งั้นตัวอ่าน stdout จะไม่รับชื่อใหม่ */
+  TUNNEL_FAILS = 0;
+  await new Promise(r=> setTimeout(r, 2000));
+  TUNNEL = startTunnel(TUNNEL_ANNOUNCE);
+  TUNNEL_RESTARTING = false;
+  if(!TUNNEL) console.log("  ! เปิดอุโมงค์ใหม่ไม่สำเร็จ — จะลองอีกครั้งในรอบถัดไป");
+}
+function watchTunnel(){
+  if(TUNNEL_WATCH) return;
+  TUNNEL_WATCH = setInterval(async ()=>{
+    if(TUNNEL_RESTARTING) return;
+    if(!PUBLIC_URL){                     /* เปิดมาแล้วแต่ยังไม่ได้ชื่อเลย = cloudflared มีปัญหา */
+      TUNNEL_FAILS++;
+      if(TUNNEL_FAILS >= WATCH_FAILS) await restartTunnel("ยังไม่ได้ที่อยู่");
+      return;
+    }
+    if(await tunnelAlive()){ TUNNEL_FAILS = 0; return; }
+    TUNNEL_FAILS++;
+    console.log("  · ตรวจอุโมงค์ไม่ผ่าน (" + TUNNEL_FAILS + "/" + WATCH_FAILS + ") — " + PUBLIC_URL);
+    if(TUNNEL_FAILS >= WATCH_FAILS) await restartTunnel("ตรวจไม่ผ่าน " + TUNNEL_FAILS + " ครั้งติดกัน");
+  }, WATCH_MS);
+  if(TUNNEL_WATCH.unref) TUNNEL_WATCH.unref();
+}
+
 function shareLink(){
   if(!PUBLIC_URL) return "";
   const page = (CFG && CFG.pagesUrl) || "";
@@ -803,7 +866,7 @@ server.listen(PORT, "0.0.0.0", ()=>{
   console.log("   รหัสเข้าใช้งานจากนอกออฟฟิศ :  " + CFG.accessCode + "   (แก้ได้ในไฟล์ WT-Paperless-Config.json)");
   if(!BASE) console.log("   ! ไม่พบ WT-Paperless-Base.json — แอปจะไม่มีข้อมูลย้อนหลังให้ดู");
 
-  TUNNEL = startTunnel(async u=>{
+  TUNNEL_ANNOUNCE = async u=>{
     const perm = permanentLink();
     console.log("");
     console.log("  ============================================================");
@@ -825,8 +888,12 @@ server.listen(PORT, "0.0.0.0", ()=>{
       console.log("   * ยังไม่ได้ตั้ง pagesUrl ใน WT-Paperless-Config.json");
       console.log("     ที่อยู่นี้จึงเปลี่ยนใหม่ทุกครั้งที่เปิดโปรแกรม");
     }
-  });
-  if(TUNNEL) console.log("   กำลังเปิดอุโมงค์สำหรับใช้งานนอกออฟฟิศ…");
+  };
+  TUNNEL = startTunnel(TUNNEL_ANNOUNCE);
+  if(TUNNEL){
+    console.log("   กำลังเปิดอุโมงค์สำหรับใช้งานนอกออฟฟิศ…");
+    watchTunnel();
+  }
   console.log("");
   console.log("   ข้อมูลใหม่บันทึกลง :  " + path.basename(DATA_XLSX));
   console.log("   สำรองข้อมูลอัตโนมัติที่ :  " + path.basename(BACKUP) + "\\");

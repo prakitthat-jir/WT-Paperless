@@ -1124,7 +1124,9 @@ function apiBase(){ return CONN.api || ""; }
    เครื่องแม่เขียนไฟล์นี้ใหม่ทุกครั้งที่เปิดอุโมงค์ มือถือจึงเปิดลิงก์เดิมได้ตลอด */
 /* เครื่องแม่ประกาศที่อยู่ล่าสุดไว้ใน api.json ซึ่งอ่านได้สองทาง:
    - คู่กับหน้าเว็บ (GitHub Pages) — ต้องรอ build ประมาณหนึ่งนาทีหลัง push
-   - raw.githubusercontent — เห็นทันทีที่ push ไม่ต้องรอ build
+   - raw.githubusercontent — อีกทางหนึ่ง เผื่อ Pages ยัง build ไม่เสร็จ
+     (วัดจริง 30 ต.ค. 69: บางครั้ง Pages มาก่อน บางครั้ง raw มาก่อน แล้วแต่แคชของใคร
+      หมดก่อน จึงต้องอ่านทั้งคู่แล้วเทียบ updated ไม่ยึดว่าทางไหนเร็วกว่าเสมอ)
    อ่านพร้อมกันทั้งคู่แล้วเลือกอันที่ประกาศล่าสุด จะได้ไม่ต้องรอ Pages */
 function apiJsonUrls(){
   const out = [];
@@ -4132,7 +4134,7 @@ function viewConnect(app){
     b.appendChild(el("div","okline","🔒 เชื่อมต่อกับ " + esc(apiOrigin()) + " ได้แล้ว — ใส่รหัสเข้าใช้งานเพื่อดูข้อมูล"));
     const f = el("label","f","<span>รหัสเข้าใช้งาน</span>");
     const inp = el("input"); inp.type = "text";
-    inp.autocomplete = "off"; inp.placeholder = "เช่น ifcc";
+    inp.autocomplete = "off"; inp.placeholder = "กรอกรหัสที่ได้รับ";
     inp.setAttribute("autocapitalize", "none");   /* iOS ชอบเปลี่ยนตัวแรกเป็นตัวใหญ่ */
     inp.setAttribute("autocorrect", "off"); inp.spellcheck = false;
     inp.style.fontSize = "1.4rem"; inp.style.letterSpacing = "4px"; inp.style.textAlign = "center";
